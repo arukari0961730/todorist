@@ -2,111 +2,184 @@ const titleInput = document.getElementById("titleInput");
 const descriptionInput = document.getElementById("descriptionInput");
 const deadlineInput = document.getElementById("deadlineInput");
 const addBtn = document.getElementById("addBtn");
-const taskList = document.getElementById("taskList");
 const errorMessage = document.getElementById("errorMessage");
-const calendarArea = document.getElementById("calendarArea");
+
+const calendarTableArea = document.getElementById("calendarTableArea");
+const monthTitle = document.getElementById("monthTitle");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const taskDetail = document.getElementById("taskDetail");
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let viewDate = new Date();
 
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-function renderTasks() {
-  taskList.innerHTML = "";
+function getTodayString() {
+  return new Date().toISOString().slice(0, 10);
+}
 
-  tasks.sort(function (a, b) {
-    return new Date(a.deadline) - new Date(b.deadline);
+function renderTaskDetail(task) {
+  taskDetail.innerHTML = "";
+
+  const title = document.createElement("h3");
+  title.textContent = task.title;
+
+  const description = document.createElement("p");
+  description.textContent =
+    task.description === "" ? "詳細：なし" : "詳細：" + task.description;
+
+  const createdAt = document.createElement("p");
+  createdAt.textContent = "追加日：" + task.createdAt;
+
+  const deadline = document.createElement("p");
+  deadline.textContent = "締切日：" + task.deadline;
+
+  const status = document.createElement("p");
+  status.textContent = task.completed ? "状態：完了" : "状態：未完了";
+
+  const completeBtn = document.createElement("button");
+  completeBtn.textContent = task.completed ? "未完了に戻す" : "完了にする";
+
+  completeBtn.addEventListener("click", function () {
+    task.completed = !task.completed;
+    saveTasks();
+    renderCalendar();
+    renderTaskDetail(task);
   });
 
-  tasks.forEach(function (task) {
-    const li = document.createElement("li");
-    li.classList.add("task-item");
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "削除";
 
-    const textSpan = document.createElement("span");
-    textSpan.textContent = task.title + "（" + task.deadline + "）";
+  deleteBtn.addEventListener("click", function () {
+    const ok = confirm("この課題を削除しますか？");
+    if (!ok) return;
 
-    if (task.completed) {
-      textSpan.style.textDecoration = "line-through";
-    }
-
-    const completeBtn = document.createElement("button");
-
-    if (task.completed) {
-      completeBtn.textContent = "未完了";
-    } else {
-      completeBtn.textContent = "完了";
-    }
-
-    completeBtn.addEventListener("click", function () {
-      task.completed = !task.completed;
-      saveTasks();
-      renderTasks();
-      renderCalendar();
+    tasks = tasks.filter(function (t) {
+      return t.id !== task.id;
     });
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "削除";
+    saveTasks();
+    renderCalendar();
 
-    deleteBtn.addEventListener("click", function () {
-      const ok = confirm("この課題を削除しますか？");
-      if (!ok) return;
-
-      tasks = tasks.filter(function (t) {
-        return t.id !== task.id;
-      });
-
-      saveTasks();
-      renderTasks();
-      renderCalendar();
-    });
-
-    li.appendChild(textSpan);
-    li.appendChild(completeBtn);
-    li.appendChild(deleteBtn);
-
-    taskList.appendChild(li);
+    taskDetail.innerHTML = "<p>課題を選択してください</p>";
   });
+
+  taskDetail.appendChild(title);
+  taskDetail.appendChild(description);
+  taskDetail.appendChild(createdAt);
+  taskDetail.appendChild(deadline);
+  taskDetail.appendChild(status);
+  taskDetail.appendChild(completeBtn);
+  taskDetail.appendChild(deleteBtn);
 }
 
 function renderCalendar() {
-  calendarArea.innerHTML = "";
+  calendarTableArea.innerHTML = "";
 
-  const groupedTasks = {};
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
 
-  tasks.forEach(function (task) {
-    if (!groupedTasks[task.deadline]) {
-      groupedTasks[task.deadline] = [];
-    }
+  monthTitle.textContent = `${year}年${month + 1}月`;
 
-    groupedTasks[task.deadline].push(task);
+  const calendarTable = document.createElement("table");
+
+  const headerRow = document.createElement("tr");
+  const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+
+  weekDays.forEach(function (day) {
+    const th = document.createElement("th");
+    th.textContent = day;
+    headerRow.appendChild(th);
   });
 
-  const dates = Object.keys(groupedTasks).sort();
+  calendarTable.appendChild(headerRow);
 
-  dates.forEach(function (date) {
-    const dateBox = document.createElement("div");
+  const firstDate = new Date(year, month, 1);
+  const lastDate = new Date(year, month + 1, 0);
 
-    const dateTitle = document.createElement("h3");
-    dateTitle.textContent = date;
+  const firstDay = firstDate.getDay();
+  const lastDay = lastDate.getDate();
 
-    const ul = document.createElement("ul");
+  let dateCount = 1;
 
-    groupedTasks[date].forEach(function (task) {
-      const li = document.createElement("li");
-      li.textContent = task.title;
+  for (let week = 0; week < 6; week++) {
+    const tr = document.createElement("tr");
 
-      if (task.completed) {
-        li.style.textDecoration = "line-through";
+    for (let day = 0; day < 7; day++) {
+      const td = document.createElement("td");
+
+      if (week === 0 && day < firstDay) {
+        td.textContent = "";
+      } else if (dateCount > lastDay) {
+        td.textContent = "";
+      } else {
+        const dateText = document.createElement("div");
+        dateText.classList.add("date-number");
+        dateText.textContent = dateCount;
+        td.appendChild(dateText);
+
+        const dateString =
+          year +
+          "-" +
+          String(month + 1).padStart(2, "0") +
+          "-" +
+          String(dateCount).padStart(2, "0");
+
+        tasks.forEach(function (task) {
+          if (!task.createdAt) {
+            task.createdAt = task.deadline;
+          }
+
+          if (dateString >= task.createdAt && dateString <= task.deadline) {
+            const taskBtn = document.createElement("button");
+            taskBtn.classList.add("calendar-task-btn");
+
+            let label = "";
+
+            if (dateString === task.createdAt && dateString === task.deadline) {
+              label = task.title + " 〆";
+            } else if (dateString === task.createdAt) {
+              label = task.title;
+            } else if (dateString === task.deadline) {
+              label = "〆 " + task.title;
+            }
+
+            if (label === "") {
+              taskBtn.textContent = "";
+              taskBtn.classList.add("task-bar-only");
+            } else {
+              taskBtn.textContent = label;
+            }
+
+            if (task.completed) {
+              taskBtn.classList.add("completed");
+            }
+
+            taskBtn.addEventListener("click", function () {
+              renderTaskDetail(task);
+            });
+
+            td.appendChild(taskBtn);
+          }
+        });
+
+        dateCount++;
       }
 
-      ul.appendChild(li);
-    });
+      tr.appendChild(td);
+    }
 
-    dateBox.appendChild(dateTitle);
-    dateBox.appendChild(ul);
-    calendarArea.appendChild(dateBox);
-  });
+    calendarTable.appendChild(tr);
+
+    if (dateCount > lastDay) {
+      break;
+    }
+  }
+
+  calendarTableArea.appendChild(calendarTable);
 }
 
 addBtn.addEventListener("click", function () {
@@ -125,13 +198,15 @@ addBtn.addEventListener("click", function () {
     id: Date.now(),
     title: title,
     description: description,
+    createdAt: getTodayString(),
     deadline: deadline,
     completed: false
   };
 
   tasks.push(task);
   saveTasks();
-  renderTasks();
+
+  viewDate = new Date(deadline);
   renderCalendar();
 
   titleInput.value = "";
@@ -139,5 +214,14 @@ addBtn.addEventListener("click", function () {
   deadlineInput.value = "";
 });
 
-renderTasks();
+prevBtn.addEventListener("click", function () {
+  viewDate.setMonth(viewDate.getMonth() - 1);
+  renderCalendar();
+});
+
+nextBtn.addEventListener("click", function () {
+  viewDate.setMonth(viewDate.getMonth() + 1);
+  renderCalendar();
+});
+
 renderCalendar();

@@ -9,16 +9,16 @@
 <body>
   <h1>グループ課題管理アプリ</h1>
 
-  <section>
+  <section class="form-section">
     <h2>課題を追加</h2>
 
-    <label for="titleInput">課題名</label>
+    <label>課題名</label>
     <input type="text" id="titleInput">
 
-    <label for="descriptionInput">詳細</label>
+    <label>詳細</label>
     <textarea id="descriptionInput"></textarea>
 
-    <label for="deadlineInput">締切日</label>
+    <label>締切日</label>
     <input type="date" id="deadlineInput">
 
     <button id="addBtn">追加</button>
@@ -26,15 +26,24 @@
     <p id="errorMessage"></p>
   </section>
 
-  <section>
-    <h2>課題一覧</h2>
-    <ul id="taskList"></ul>
+  <section class="calendar-section">
+    <h2>締切カレンダー</h2>
+
+    <div class="calendar-layout">
+      <div id="calendarArea">
+        <div class="calendar-header">
+          <button id="prevBtn">←</button>
+          <h3 id="monthTitle"></h3>
+          <button id="nextBtn">→</button>
+        </div>
+
+        <div id="calendarTableArea"></div>
+      </div>
+
+      <div id="taskDetail" class="task-detail">
+        <p>課題を選択してください</p>
+      </div>
+    </div>
   </section>
-
-  <section>
-  <h2>締切カレンダー</h2>
-  <div id="calendarArea"></div>
-</section>
-
 </body>
 </html>
