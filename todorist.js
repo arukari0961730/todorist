@@ -4,6 +4,7 @@ const deadlineInput = document.getElementById("deadlineInput");
 const addBtn = document.getElementById("addBtn");
 const taskList = document.getElementById("taskList");
 const errorMessage = document.getElementById("errorMessage");
+const calendarArea = document.getElementById("calendarArea");
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
@@ -20,6 +21,7 @@ function renderTasks() {
 
   tasks.forEach(function (task) {
     const li = document.createElement("li");
+    li.classList.add("task-item");
 
     const textSpan = document.createElement("span");
     textSpan.textContent = task.title + "（" + task.deadline + "）";
@@ -40,6 +42,7 @@ function renderTasks() {
       task.completed = !task.completed;
       saveTasks();
       renderTasks();
+      renderCalendar();
     });
 
     const deleteBtn = document.createElement("button");
@@ -55,6 +58,7 @@ function renderTasks() {
 
       saveTasks();
       renderTasks();
+      renderCalendar();
     });
 
     li.appendChild(textSpan);
@@ -62,6 +66,46 @@ function renderTasks() {
     li.appendChild(deleteBtn);
 
     taskList.appendChild(li);
+  });
+}
+
+function renderCalendar() {
+  calendarArea.innerHTML = "";
+
+  const groupedTasks = {};
+
+  tasks.forEach(function (task) {
+    if (!groupedTasks[task.deadline]) {
+      groupedTasks[task.deadline] = [];
+    }
+
+    groupedTasks[task.deadline].push(task);
+  });
+
+  const dates = Object.keys(groupedTasks).sort();
+
+  dates.forEach(function (date) {
+    const dateBox = document.createElement("div");
+
+    const dateTitle = document.createElement("h3");
+    dateTitle.textContent = date;
+
+    const ul = document.createElement("ul");
+
+    groupedTasks[date].forEach(function (task) {
+      const li = document.createElement("li");
+      li.textContent = task.title;
+
+      if (task.completed) {
+        li.style.textDecoration = "line-through";
+      }
+
+      ul.appendChild(li);
+    });
+
+    dateBox.appendChild(dateTitle);
+    dateBox.appendChild(ul);
+    calendarArea.appendChild(dateBox);
   });
 }
 
@@ -88,6 +132,7 @@ addBtn.addEventListener("click", function () {
   tasks.push(task);
   saveTasks();
   renderTasks();
+  renderCalendar();
 
   titleInput.value = "";
   descriptionInput.value = "";
@@ -95,3 +140,4 @@ addBtn.addEventListener("click", function () {
 });
 
 renderTasks();
+renderCalendar();
