@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <title>グループ課題管理アプリ</title>
   <link rel="stylesheet" href="todorist.css">
   <script src="todorist.js" defer></script>
 </head>
+
 <body>
+
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>課題を編集</h2>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
   <h1>グループ課題管理アプリ</h1>
 
   <section class="form-section">
@@ -50,4 +60,5 @@
     </div>
   </section>
 </body>
+
 </html>
