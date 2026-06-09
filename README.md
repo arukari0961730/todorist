@@ -49,7 +49,6 @@
 * HTML
 * CSS
 * JavaScript
-* localStorage
 
 ### 今後使用予定の技術
 
