@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>グループ課題管理アプリ</title>
+  <title>ゲーム開発サークル向け作業管理アプリ</title>
   <link rel="stylesheet" href="todorist.css">
   <script src="todorist.js" defer></script>
 </head>
@@ -12,53 +12,94 @@
 
   <div id="modalOverlay" class="modal-overlay hidden">
     <div class="modal">
-      <h2>課題を編集</h2>
+      <h2>課題詳細</h2>
       <div id="modalContent"></div>
     </div>
   </div>
 
-  <h1>グループ課題管理アプリ</h1>
+  <header class="app-header">
+    <h1>ゲーム開発サークル向け作業管理アプリ</h1>
+  </header>
 
-  <section class="form-section">
-    <h2>課題を追加</h2>
+  <div class="app-layout">
 
-    <label>課題名</label>
-    <input type="text" id="titleInput">
+    <aside class="sidebar">
+      <h2>チーム</h2>
 
-    <label>詳細</label>
-    <textarea id="descriptionInput"></textarea>
+      <button class="team-btn active">個人ゲーム制作チーム</button>
+      <button class="team-btn">マルチゲーム制作チーム</button>
+      <button class="team-btn">ガッツリゲーム制作チーム</button>
 
-    <label>担当者</label>
-    <input type="text" id="assigneeInput">
+      <hr>
 
-    <label>締切日</label>
-    <input type="date" id="deadlineInput">
+      <nav class="side-menu">
+        <button class="menu-btn active">タスク</button>
+        <button class="menu-btn">カレンダー</button>
+        <button class="menu-btn">チャット</button>
+        <button class="menu-btn">PR共有</button>
+        <button class="menu-btn">メンバー</button>
+      </nav>
+    </aside>
 
-    <button id="addBtn">追加</button>
+    <main class="main-content">
 
-    <p id="errorMessage"></p>
-  </section>
+      <section class="form-section">
+        <h2>課題を追加</h2>
 
-  <section class="calendar-section">
-    <h2>締切カレンダー</h2>
+        <label>課題名</label>
+        <input type="text" id="titleInput">
 
-    <div class="calendar-layout">
-      <div id="calendarArea">
-        <div class="calendar-header">
-          <button id="prevBtn">←</button>
-          <button id="todayBtn">今日</button>
-          <h3 id="monthTitle"></h3>
-          <button id="nextBtn">→</button>
+        <label>詳細</label>
+        <textarea id="descriptionInput"></textarea>
+
+        <label>担当者</label>
+        <input type="text" id="assigneeInput">
+
+        <label>締切日</label>
+        <input type="date" id="deadlineInput">
+
+        <button id="addBtn">追加</button>
+
+        <p id="errorMessage"></p>
+      </section>
+
+      <section class="calendar-section">
+        <div class="section-header">
+          <h2>作業管理</h2>
+
+          <div class="view-tabs">
+            <button id="calendarTab" class="tab-btn active">カレンダー</button>
+            <button id="listTab" class="tab-btn">一覧</button>
+            <button id="boardTab" class="tab-btn">ボード</button>
+          </div>
         </div>
 
-        <div id="calendarTableArea"></div>
-      </div>
+        <div id="calendarArea" class="view-content">
+          <div class="calendar-header">
+            <button id="prevBtn">←</button>
+            <button id="todayBtn">今日</button>
+            <h3 id="monthTitle"></h3>
+            <button id="nextBtn">→</button>
+          </div>
 
-      <div id="taskDetail" class="task-detail">
-        <p>課題を選択してください</p>
-      </div>
-    </div>
-  </section>
+          <div id="calendarTableArea"></div>
+        </div>
+
+        <div id="listArea" class="view-content hidden">
+          <h3>タスク一覧</h3>
+          <div id="taskListArea"></div>
+        </div>
+
+        <div id="boardArea" class="view-content hidden">
+          <h3>ボード表示</h3>
+          <p>今後、Trello風の表示を実装予定です。</p>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
 </body>
 
 </html>

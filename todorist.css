@@ -1,402 +1,410 @@
-/* ========================================
-   全体共通設定
-======================================== */
-
-/* widthやheightにpaddingとborderを含める */
 * {
   box-sizing: border-box;
 }
 
-/* ページ全体 */
 body {
   font-family: sans-serif;
-  /* フォント */
   background-color: #f4f6f8;
-  /* 背景色 */
   margin: 0;
-  /* 外側余白をリセット */
-  padding: 30px;
-  /* ページ内余白 */
+  color: #1f2937;
 }
 
-/* 見出しを中央揃え */
-h1,
-h2 {
-  text-align: center;
+/* ヘッダー */
+.app-header {
+  height: 70px;
+  background-color: #1e293b;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 30px;
 }
 
-/* ========================================
-   課題追加フォーム
-======================================== */
+.app-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
 
-.form-section {
-  max-width: 700px;
-  /* 横幅の最大値 */
-  margin: 20px auto;
-  /* 中央寄せ */
-  padding: 20px;
+/* 全体レイアウト */
+.app-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  padding: 24px;
+}
 
+.main-content {
+  min-width: 0;
+  width: 100%;
+}
+
+/* 左サイドバー */
+.sidebar {
   background-color: white;
-
-  border-radius: 10px;
-  /* 角丸 */
+  border-radius: 12px;
+  padding: 20px;
+  min-height: calc(100vh - 118px);
   border: 1px solid #ddd;
 }
 
-/* ラベルは1行で表示 */
+.sidebar h2 {
+  font-size: 18px;
+  margin-top: 0;
+}
+
+.team-btn,
+.menu-btn {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  cursor: pointer;
+  text-align: left;
+  font-size: 15px;
+}
+
+.team-btn.active,
+.menu-btn.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.sidebar hr {
+  margin: 24px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+/* 課題追加フォーム */
+.form-section {
+  background-color: white;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.form-section h2 {
+  margin-top: 0;
+  font-size: 24px;
+}
+
 .form-section label {
   display: block;
-  margin-top: 15px;
+  margin-top: 16px;
   font-weight: bold;
 }
 
-/* 入力欄共通 */
 .form-section input,
 .form-section textarea {
   width: 100%;
-  /* 親要素いっぱい */
-  padding: 8px;
-  margin-top: 5px;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
 }
 
-/* 課題追加ボタン */
+.form-section textarea {
+  min-height: 80px;
+}
+
 .form-section button {
-  margin-top: 15px;
-  padding: 10px;
-
+  margin-top: 18px;
+  padding: 12px;
   width: 100%;
-
   background-color: #3b82f6;
   color: white;
-
   border: none;
-  border-radius: 6px;
-
+  border-radius: 8px;
   cursor: pointer;
-  /* マウスカーソルを指に */
+  font-size: 16px;
 }
 
-/* マウスを乗せた時 */
 .form-section button:hover {
   background-color: #2563eb;
 }
 
-/* エラーメッセージ */
 #errorMessage {
   color: red;
   margin-top: 10px;
 }
 
-/* ========================================
-   カレンダー全体
-======================================== */
-
+/* 作業管理エリア */
 .calendar-section {
-  max-width: 1200px;
-  margin: 40px auto 0;
+  width: 100%;
+  background-color: white;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  padding: 24px;
 }
 
-/*
-  カレンダーと詳細パネルを横並びにする
-*/
-.calendar-layout {
+.section-header {
   display: flex;
-
-  justify-content: center;
-
-  align-items: flex-start;
-
-  gap: 30px;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* カレンダーエリア */
+.section-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 999px;
+  background-color: #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab-btn.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.view-content {
+  margin-top: 20px;
+}
+
+/* カレンダー上部 */
 #calendarArea {
-  width: 800px;
+  width: 100%;
 }
 
-/* ========================================
-   カレンダーテーブル
-======================================== */
+.calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0 18px;
+}
 
+.calendar-header h3 {
+  margin: 0;
+  width: 150px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.calendar-header button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #3b82f6;
+  color: white;
+  cursor: pointer;
+}
+
+/* カレンダー */
 table {
   width: 100%;
   border-collapse: collapse;
-  /* 線を重ねる */
-
   background-color: white;
 }
 
 th,
 td {
   border: 1px solid #ccc;
-
   width: 14.2%;
-  /* 7列に分割 */
-
-  height: 120px;
-
+  height: 125px;
   vertical-align: top;
-  /* 上寄せ */
-
-  padding: 5px;
+  padding: 6px;
 }
 
-/* 曜日ヘッダー */
 th {
   background-color: #e9ecef;
-
   text-align: center;
-
-  height: 40px;
+  height: 42px;
 }
 
-/* 日付表示 */
 .date-number {
   font-size: 13px;
   font-weight: bold;
-
   margin-bottom: 5px;
 }
 
-/* ========================================
-   タスクバー
-======================================== */
+.today .date-number {
+  background-color: #bfdbfe;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
 
-/*
-  カレンダー上に表示する課題ボタン
-*/
+/* カレンダー内タスクバー */
 .calendar-task-btn {
   display: block;
-
   width: 100%;
-  height: 20px;
-
+  height: 22px;
   margin-top: 4px;
   padding: 2px 5px;
-
   font-size: 11px;
   text-align: left;
-
   border: none;
   border-radius: 4px;
-
   background-color: #dbeafe;
-
   cursor: pointer;
-
-  /* 長い文字は省略 */
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-/* ホバー時 */
 .calendar-task-btn:hover {
   background-color: #bfdbfe;
 }
 
-/*
-  開始日でも締切日でもない
-  中間日のバー
-*/
 .task-bar-only {
-  height: 20px;
+  height: 22px;
   padding: 2px 5px;
-
   font-size: 11px;
 }
 
-/* 完了済みタスク */
 .calendar-task-btn.completed {
   background-color: #d1fae5;
-
   opacity: 0.7;
 }
 
-/* ========================================
-   右側の詳細パネル
-======================================== */
-
-.task-detail {
-  width: 300px;
-
-  min-height: 300px;
-
-  background-color: white;
-
-  border: 1px solid #ccc;
+/* 一覧表示 */
+#listArea,
+#boardArea {
+  background-color: #f8fafc;
   border-radius: 10px;
-
   padding: 20px;
-
-  margin-top: 60px;
 }
 
-/* タイトル上余白を消す */
-.task-detail h3 {
+#listArea h3,
+#boardArea h3 {
   margin-top: 0;
 }
 
-/* 詳細項目 */
-.task-detail p {
-  margin: 10px 0;
-}
-
-/* 詳細パネル内ボタン共通 */
-.task-detail button {
-  display: block;
-
-  width: 100%;
-
-  margin-top: 10px;
-
-  padding: 8px;
-
-  border: none;
-  border-radius: 6px;
-
+.task-list-item {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
   cursor: pointer;
 }
 
-/* 完了ボタン */
-.task-detail button:nth-of-type(1) {
-  background-color: #22c55e;
-  color: white;
+.task-list-item:hover {
+  background-color: #f1f5f9;
 }
 
-/* 編集ボタン */
-.task-detail button:nth-of-type(2) {
-  background-color: #f59e0b;
-  color: white;
+.task-list-title {
+  font-weight: bold;
+  margin-bottom: 6px;
 }
 
-/* 削除ボタン */
-.task-detail button:nth-of-type(3) {
-  background-color: #ef4444;
-  color: white;
+.task-list-meta {
+  font-size: 13px;
+  color: #64748b;
 }
 
-/* ========================================
-   編集フォーム
-======================================== */
-
-/* モーダル内入力欄 */
-.edit-input,
-.edit-textarea {
-  width: 100%;
-
-  padding: 8px;
-
-  margin: 5px 0 10px;
-}
-
-/* ========================================
-   カレンダー上部
-======================================== */
-
-/*
-  ← 今日 → の部分
-*/
-.calendar-header {
-  display: flex;
-
-  justify-content: center;
-
-  align-items: center;
-
-  gap: 15px;
-
-  margin-bottom: 15px;
-}
-
-/* 月表示 */
-.calendar-header h3 {
-  margin: 0;
-
-  width: 140px;
-
-  text-align: center;
-}
-
-/* 月移動ボタン */
-.calendar-header button {
-  padding: 6px 12px;
-
-  border: none;
-  border-radius: 6px;
-
-  background-color: #3b82f6;
-
-  color: white;
-
-  cursor: pointer;
-}
-
-/* ========================================
-   今日の日付
-======================================== */
-
-/*
-  今日だけ青い丸で強調
-*/
-.today .date-number {
-  background-color: #bfdbfe;
-
-  width: fit-content;
-
-  padding: 3px 8px;
-
-  border-radius: 999px;
-}
-
-/* ========================================
-   モーダル
-======================================== */
-
-/* 非表示 */
+/* モーダル */
+/* モーダル・画面切替の非表示 */
 .hidden {
-  display: none;
+  display: none !important;
 }
 
-/*
-  背景全体を覆う半透明レイヤー
-*/
 .modal-overlay {
   position: fixed;
-
   inset: 0;
-
   background-color: rgba(0, 0, 0, 0.5);
-
   display: flex;
-
   justify-content: center;
   align-items: center;
-
   z-index: 2000;
 }
 
-/*
-  hiddenが付いている時だけ非表示
-*/
 .modal-overlay.hidden {
   display: none;
 }
 
-/* 編集画面本体 */
 .modal {
-  width: 500px;
-
+  width: 520px;
   max-width: 90%;
-
   background-color: white;
-
   border-radius: 12px;
-
   padding: 25px;
 }
 
-/* モーダルタイトル */
 .modal h2 {
   margin-top: 0;
+}
+
+#modalContent h3 {
+  margin-top: 0;
+}
+
+#modalContent p {
+  margin: 10px 0;
+}
+
+#modalContent button {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#modalContent button:nth-of-type(1) {
+  background-color: #22c55e;
+  color: white;
+}
+
+#modalContent button:nth-of-type(2) {
+  background-color: #f59e0b;
+  color: white;
+}
+
+#modalContent button:nth-of-type(3) {
+  background-color: #ef4444;
+  color: white;
+}
+
+#modalContent button:nth-of-type(4) {
+  background-color: #64748b;
+  color: white;
+}
+
+/* 編集フォーム */
+.edit-input,
+.edit-textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0 10px;
+}
+
+/* レスポンシブ */
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    min-height: auto;
+  }
+}
+
+.task-list-item.expired {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.task-list-item.expired .task-list-title {
+  color: #dc2626;
+}
+
+.task-list-item.expired .task-list-meta {
+  color: #b91c1c;
 }
