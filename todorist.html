@@ -52,11 +52,14 @@
         <label>詳細</label>
         <textarea id="descriptionInput"></textarea>
 
-        <label>担当者</label>
-        <input type="text" id="assigneeInput">
+     <label>担当者</label>
+<input type="text" id="assigneeInput">
 
-        <label>締切日</label>
-        <input type="date" id="deadlineInput">
+<label>開始日</label>
+<input type="date" id="startDateInput">
+
+<label>締切日</label>
+<input type="date" id="deadlineInput">
 
         <button id="addBtn">追加</button>
 
@@ -70,6 +73,7 @@
           <div class="view-tabs">
             <button id="calendarTab" class="tab-btn active">カレンダー</button>
             <button id="listTab" class="tab-btn">一覧</button>
+            <button id="ganttTab" class="tab-btn">ガント</button>
             <button id="boardTab" class="tab-btn">ボード</button>
           </div>
         </div>
@@ -88,6 +92,11 @@
         <div id="listArea" class="view-content hidden">
           <h3>タスク一覧</h3>
           <div id="taskListArea"></div>
+        </div>
+
+        <div id="ganttArea" class="view-content hidden">
+          <h3>ガントチャート</h3>
+          <div id="ganttChartArea"></div>
         </div>
 
         <div id="boardArea" class="view-content hidden">

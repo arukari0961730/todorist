@@ -1,6 +1,7 @@
 const titleInput = document.getElementById("titleInput");
 const descriptionInput = document.getElementById("descriptionInput");
 const assigneeInput = document.getElementById("assigneeInput");
+const startDateInput = document.getElementById("startDateInput");
 const deadlineInput = document.getElementById("deadlineInput");
 
 const addBtn = document.getElementById("addBtn");
@@ -18,12 +19,16 @@ const modalContent = document.getElementById("modalContent");
 
 const calendarTab = document.getElementById("calendarTab");
 const listTab = document.getElementById("listTab");
+const ganttTab = document.getElementById("ganttTab");
 const boardTab = document.getElementById("boardTab");
 
 const calendarArea = document.getElementById("calendarArea");
 const listArea = document.getElementById("listArea");
+const ganttArea = document.getElementById("ganttArea");
 const boardArea = document.getElementById("boardArea");
+
 const taskListArea = document.getElementById("taskListArea");
+const ganttChartArea = document.getElementById("ganttChartArea");
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let viewDate = new Date();
@@ -34,6 +39,10 @@ function saveTasks() {
 
 function getTodayString() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function formatDateString(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 function closeModal() {
@@ -49,10 +58,12 @@ modalOverlay.addEventListener("click", function (event) {
 function switchView(viewName) {
   calendarArea.classList.add("hidden");
   listArea.classList.add("hidden");
+  ganttArea.classList.add("hidden");
   boardArea.classList.add("hidden");
 
   calendarTab.classList.remove("active");
   listTab.classList.remove("active");
+  ganttTab.classList.remove("active");
   boardTab.classList.remove("active");
 
   if (viewName === "calendar") {
@@ -65,6 +76,12 @@ function switchView(viewName) {
     listArea.classList.remove("hidden");
     listTab.classList.add("active");
     renderTaskList();
+  }
+
+  if (viewName === "gantt") {
+    ganttArea.classList.remove("hidden");
+    ganttTab.classList.add("active");
+    renderGanttChart();
   }
 
   if (viewName === "board") {
@@ -89,7 +106,7 @@ function renderTaskDetail(task) {
     !task.assignee ? "担当者：未設定" : "担当者：" + task.assignee;
 
   const createdAt = document.createElement("p");
-  createdAt.textContent = "追加日：" + task.createdAt;
+  createdAt.textContent = "開始日：" + task.createdAt;
 
   const deadline = document.createElement("p");
   deadline.textContent = "締切日：" + task.deadline;
@@ -102,9 +119,11 @@ function renderTaskDetail(task) {
 
   completeBtn.addEventListener("click", function () {
     task.completed = !task.completed;
+
     saveTasks();
     renderCalendar();
     renderTaskList();
+    renderGanttChart();
     renderTaskDetail(task);
   });
 
@@ -120,7 +139,10 @@ function renderTaskDetail(task) {
 
   deleteBtn.addEventListener("click", function () {
     const ok = confirm("この課題を削除しますか？");
-    if (!ok) return;
+
+    if (!ok) {
+      return;
+    }
 
     tasks = tasks.filter(function (t) {
       return t.id !== task.id;
@@ -129,6 +151,7 @@ function renderTaskDetail(task) {
     saveTasks();
     renderCalendar();
     renderTaskList();
+    renderGanttChart();
     closeModal();
   });
 
@@ -176,6 +199,14 @@ function renderEditForm(task) {
   assigneeEdit.classList.add("edit-input");
   assigneeEdit.value = task.assignee || "";
 
+  const startDateLabel = document.createElement("label");
+  startDateLabel.textContent = "開始日";
+
+  const startDateEdit = document.createElement("input");
+  startDateEdit.classList.add("edit-input");
+  startDateEdit.type = "date";
+  startDateEdit.value = task.createdAt;
+
   const deadlineLabel = document.createElement("label");
   deadlineLabel.textContent = "締切日";
 
@@ -188,14 +219,24 @@ function renderEditForm(task) {
   saveBtn.textContent = "保存";
 
   saveBtn.addEventListener("click", function () {
-    if (titleEdit.value === "" || deadlineEdit.value === "") {
-      alert("課題名と締切日は必須です");
+    if (
+      titleEdit.value === "" ||
+      startDateEdit.value === "" ||
+      deadlineEdit.value === ""
+    ) {
+      alert("課題名、開始日、締切日は必須です");
+      return;
+    }
+
+    if (startDateEdit.value > deadlineEdit.value) {
+      alert("開始日は締切日より前の日付にしてください");
       return;
     }
 
     task.title = titleEdit.value;
     task.description = descriptionEdit.value;
     task.assignee = assigneeEdit.value;
+    task.createdAt = startDateEdit.value;
     task.deadline = deadlineEdit.value;
 
     saveTasks();
@@ -204,6 +245,7 @@ function renderEditForm(task) {
 
     renderCalendar();
     renderTaskList();
+    renderGanttChart();
     renderTaskDetail(task);
 
     closeModal();
@@ -222,6 +264,8 @@ function renderEditForm(task) {
   modalContent.appendChild(descriptionEdit);
   modalContent.appendChild(assigneeLabel);
   modalContent.appendChild(assigneeEdit);
+  modalContent.appendChild(startDateLabel);
+  modalContent.appendChild(startDateEdit);
   modalContent.appendChild(deadlineLabel);
   modalContent.appendChild(deadlineEdit);
   modalContent.appendChild(saveBtn);
@@ -256,6 +300,7 @@ function renderCalendar() {
   const lastDay = lastDate.getDate();
 
   let dateCount = 1;
+  const todayString = getTodayString();
 
   for (let week = 0; week < 6; week++) {
     const tr = document.createElement("tr");
@@ -280,7 +325,7 @@ function renderCalendar() {
           "-" +
           String(dateCount).padStart(2, "0");
 
-        if (dateString === getTodayString()) {
+        if (dateString === todayString) {
           td.classList.add("today");
         }
 
@@ -293,29 +338,20 @@ function renderCalendar() {
             task.assignee = "";
           }
 
-          if (dateString >= task.createdAt && dateString <= task.deadline) {
+          if (dateString === task.deadline) {
             const taskBtn = document.createElement("button");
             taskBtn.classList.add("calendar-task-btn");
 
-            let label = "";
+            const isExpired = task.deadline < todayString && !task.completed;
 
-            if (dateString === task.createdAt && dateString === task.deadline) {
-              label = task.title + " 〆";
-            } else if (dateString === task.createdAt) {
-              label = task.title;
-            } else if (dateString === task.deadline) {
-              label = "〆 " + task.title;
-            }
-
-            if (label === "") {
-              taskBtn.textContent = "";
-              taskBtn.classList.add("task-bar-only");
-            } else {
-              taskBtn.textContent = label;
-            }
+            taskBtn.textContent = isExpired ? "⚠ " + task.title : task.title;
 
             if (task.completed) {
               taskBtn.classList.add("completed");
+            }
+
+            if (isExpired) {
+              taskBtn.classList.add("expired");
             }
 
             taskBtn.addEventListener("click", function () {
@@ -358,7 +394,6 @@ function renderTaskList() {
       return a.deadline.localeCompare(b.deadline);
     })
     .forEach(function (task) {
-
       if (!task.createdAt) {
         task.createdAt = task.deadline;
       }
@@ -378,7 +413,6 @@ function renderTaskList() {
 
       const title = document.createElement("div");
       title.classList.add("task-list-title");
-
       title.textContent = isExpired ? "⚠ " + task.title : task.title;
 
       const meta = document.createElement("div");
@@ -390,6 +424,8 @@ function renderTaskList() {
       meta.textContent =
         "担当者：" +
         assigneeText +
+        " / 開始日：" +
+        task.createdAt +
         " / 締切：" +
         task.deadline +
         " / 状態：" +
@@ -406,14 +442,133 @@ function renderTaskList() {
     });
 }
 
+function renderGanttChart() {
+  ganttChartArea.innerHTML = "";
+
+  if (tasks.length === 0) {
+    ganttChartArea.innerHTML = "<p>タスクがありません</p>";
+    return;
+  }
+
+  const todayString = getTodayString();
+
+  const startDate = new Date();
+  const dates = [];
+
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    dates.push(date);
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("gantt-wrapper");
+
+  const grid = document.createElement("div");
+  grid.classList.add("gantt-grid");
+
+  const headerRow = document.createElement("div");
+  headerRow.classList.add("gantt-row", "gantt-header");
+
+  const taskHeader = document.createElement("div");
+  taskHeader.classList.add("gantt-task-name");
+  taskHeader.textContent = "タスク";
+  headerRow.appendChild(taskHeader);
+
+  dates.forEach(function (date) {
+    const cell = document.createElement("div");
+    cell.classList.add("gantt-date-cell");
+
+    const dateString = formatDateString(date);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    cell.textContent = month + "/" + day;
+
+    if (dateString === todayString) {
+      cell.classList.add("gantt-today");
+    }
+
+    headerRow.appendChild(cell);
+  });
+
+  grid.appendChild(headerRow);
+
+  tasks
+    .slice()
+    .sort(function (a, b) {
+      return a.deadline.localeCompare(b.deadline);
+    })
+    .forEach(function (task) {
+      if (!task.createdAt) {
+        task.createdAt = task.deadline;
+      }
+
+      const row = document.createElement("div");
+      row.classList.add("gantt-row");
+
+      const taskName = document.createElement("div");
+      taskName.classList.add("gantt-task-name");
+      taskName.textContent = task.title;
+      row.appendChild(taskName);
+
+      dates.forEach(function (date) {
+        const cell = document.createElement("div");
+        cell.classList.add("gantt-date-cell");
+
+        const dateString = formatDateString(date);
+        const isInRange =
+          dateString >= task.createdAt && dateString <= task.deadline;
+
+        const isExpired = task.deadline < todayString && !task.completed;
+
+        if (dateString === todayString) {
+          cell.classList.add("gantt-today");
+        }
+
+        if (isInRange) {
+          const bar = document.createElement("div");
+          bar.classList.add("gantt-bar");
+
+          if (task.completed) {
+            bar.classList.add("completed");
+          }
+
+          if (isExpired) {
+            bar.classList.add("expired");
+          }
+
+          bar.addEventListener("click", function () {
+            renderTaskDetail(task);
+          });
+
+          cell.appendChild(bar);
+        }
+
+        row.appendChild(cell);
+      });
+
+      grid.appendChild(row);
+    });
+
+  wrapper.appendChild(grid);
+  ganttChartArea.appendChild(wrapper);
+}
+
 addBtn.addEventListener("click", function () {
   const title = titleInput.value;
   const description = descriptionInput.value;
   const assignee = assigneeInput.value;
+  const startDate = startDateInput.value;
   const deadline = deadlineInput.value;
 
-  if (title === "" || deadline === "") {
-    errorMessage.textContent = "課題名と締切日は必須です";
+  if (title === "" || startDate === "" || deadline === "") {
+    errorMessage.textContent = "課題名、開始日、締切日は必須です";
+    return;
+  }
+
+  if (startDate > deadline) {
+    errorMessage.textContent = "開始日は締切日より前の日付にしてください";
     return;
   }
 
@@ -424,7 +579,7 @@ addBtn.addEventListener("click", function () {
     title: title,
     description: description,
     assignee: assignee,
-    createdAt: getTodayString(),
+    createdAt: startDate,
     deadline: deadline,
     completed: false
   };
@@ -436,10 +591,12 @@ addBtn.addEventListener("click", function () {
 
   renderCalendar();
   renderTaskList();
+  renderGanttChart();
 
   titleInput.value = "";
   descriptionInput.value = "";
   assigneeInput.value = "";
+  startDateInput.value = getTodayString();
   deadlineInput.value = "";
 });
 
@@ -466,8 +623,13 @@ listTab.addEventListener("click", function () {
   switchView("list");
 });
 
+ganttTab.addEventListener("click", function () {
+  switchView("gantt");
+});
+
 boardTab.addEventListener("click", function () {
   switchView("board");
 });
 
+startDateInput.value = getTodayString();
 renderCalendar();
