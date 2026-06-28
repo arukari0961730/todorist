@@ -52,14 +52,23 @@
         <label>詳細</label>
         <textarea id="descriptionInput"></textarea>
 
-     <label>担当者</label>
-<input type="text" id="assigneeInput">
+        <label>担当者</label>
+        <input type="text" id="assigneeInput">
 
-<label>開始日</label>
-<input type="date" id="startDateInput">
+        <label>開始日</label>
+        <input type="date" id="startDateInput">
 
-<label>締切日</label>
-<input type="date" id="deadlineInput">
+        <label>締切日</label>
+        <input type="date" id="deadlineInput">
+
+        <label>状態</label>
+        <select id="statusInput">
+          <option value="todo">未着手</option>
+          <option value="working">作業中</option>
+          <option value="review">確認待ち</option>
+          <option value="fix">修正中</option>
+          <option value="done">完了</option>
+        </select>
 
         <button id="addBtn">追加</button>
 
@@ -76,6 +85,27 @@
             <button id="ganttTab" class="tab-btn">ガント</button>
             <button id="boardTab" class="tab-btn">ボード</button>
           </div>
+        </div>
+
+        <div class="search-area">
+          <input type="text" id="searchInput" placeholder="課題名・詳細・担当者・状態で検索">
+        </div>
+
+        <div class="filter-area">
+          <select id="statusFilter">
+            <option value="all">すべての状態</option>
+            <option value="todo">未着手</option>
+            <option value="working">作業中</option>
+            <option value="review">確認待ち</option>
+            <option value="fix">修正中</option>
+            <option value="done">完了</option>
+          </select>
+
+          <select id="deadlineFilter">
+            <option value="all">すべての期限</option>
+            <option value="expired">期限切れのみ</option>
+            <option value="today">今日締切のみ</option>
+          </select>
         </div>
 
         <div id="calendarArea" class="view-content">
@@ -101,7 +131,7 @@
 
         <div id="boardArea" class="view-content hidden">
           <h3>ボード表示</h3>
-          <p>今後、Trello風の表示を実装予定です。</p>
+          <div id="boardContentArea"></div>
         </div>
       </section>
 

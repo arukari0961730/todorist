@@ -3,6 +3,7 @@ const descriptionInput = document.getElementById("descriptionInput");
 const assigneeInput = document.getElementById("assigneeInput");
 const startDateInput = document.getElementById("startDateInput");
 const deadlineInput = document.getElementById("deadlineInput");
+const statusInput = document.getElementById("statusInput");
 
 const addBtn = document.getElementById("addBtn");
 const errorMessage = document.getElementById("errorMessage");
@@ -29,9 +30,26 @@ const boardArea = document.getElementById("boardArea");
 
 const taskListArea = document.getElementById("taskListArea");
 const ganttChartArea = document.getElementById("ganttChartArea");
+const boardContentArea = document.getElementById("boardContentArea");
+
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+const deadlineFilter = document.getElementById("deadlineFilter");
+
+const STATUS_LIST = [
+  { value: "todo", label: "未着手" },
+  { value: "working", label: "作業中" },
+  { value: "review", label: "確認待ち" },
+  { value: "fix", label: "修正中" },
+  { value: "done", label: "完了" }
+];
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let viewDate = new Date();
+
+let searchKeyword = "";
+let selectedStatusFilter = "all";
+let selectedDeadlineFilter = "all";
 
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -43,6 +61,103 @@ function getTodayString() {
 
 function formatDateString(date) {
   return date.toISOString().slice(0, 10);
+}
+
+function getStatusLabel(statusValue) {
+  const foundStatus = STATUS_LIST.find(function (status) {
+    return status.value === statusValue;
+  });
+
+  if (!foundStatus) {
+    return "未着手";
+  }
+
+  return foundStatus.label;
+}
+
+function getStatusClass(statusValue) {
+  return "status-" + statusValue;
+}
+
+function isTaskDone(task) {
+  return task.status === "done";
+}
+
+function isTaskExpired(task) {
+  const todayString = getTodayString();
+  return task.deadline < todayString && !isTaskDone(task);
+}
+
+function isTaskDueToday(task) {
+  return task.deadline === getTodayString();
+}
+
+function getFilteredTasks() {
+  let result = tasks.slice();
+
+  if (searchKeyword !== "") {
+    result = result.filter(function (task) {
+      const keyword = searchKeyword.toLowerCase();
+
+      const title = task.title.toLowerCase();
+      const description = task.description.toLowerCase();
+      const assignee = task.assignee.toLowerCase();
+      const statusLabel = getStatusLabel(task.status).toLowerCase();
+
+      return (
+        title.includes(keyword) ||
+        description.includes(keyword) ||
+        assignee.includes(keyword) ||
+        statusLabel.includes(keyword)
+      );
+    });
+  }
+
+  if (selectedStatusFilter !== "all") {
+    result = result.filter(function (task) {
+      return task.status === selectedStatusFilter;
+    });
+  }
+
+  if (selectedDeadlineFilter === "expired") {
+    result = result.filter(function (task) {
+      return isTaskExpired(task);
+    });
+  }
+
+  if (selectedDeadlineFilter === "today") {
+    result = result.filter(function (task) {
+      return isTaskDueToday(task);
+    });
+  }
+
+  return result;
+}
+
+function normalizeTasks() {
+  tasks.forEach(function (task) {
+    if (!task.createdAt) {
+      task.createdAt = task.deadline;
+    }
+
+    if (task.assignee === undefined) {
+      task.assignee = "";
+    }
+
+    if (task.description === undefined) {
+      task.description = "";
+    }
+
+    if (!task.status) {
+      if (task.completed === true) {
+        task.status = "done";
+      } else {
+        task.status = "todo";
+      }
+    }
+  });
+
+  saveTasks();
 }
 
 function closeModal() {
@@ -87,9 +202,35 @@ function switchView(viewName) {
   if (viewName === "board") {
     boardArea.classList.remove("hidden");
     boardTab.classList.add("active");
+    renderBoard();
   }
 }
 
+function renderStatusSelect(selectedStatus) {
+  const select = document.createElement("select");
+  select.classList.add("edit-select");
+
+  STATUS_LIST.forEach(function (status) {
+    const option = document.createElement("option");
+    option.value = status.value;
+    option.textContent = status.label;
+
+    if (status.value === selectedStatus) {
+      option.selected = true;
+    }
+
+    select.appendChild(option);
+  });
+
+  return select;
+}
+
+function refreshAllViews() {
+  renderCalendar();
+  renderTaskList();
+  renderGanttChart();
+  renderBoard();
+}
 function renderTaskDetail(task) {
   modalOverlay.classList.remove("hidden");
   modalContent.innerHTML = "";
@@ -111,23 +252,32 @@ function renderTaskDetail(task) {
   const deadline = document.createElement("p");
   deadline.textContent = "締切日：" + task.deadline;
 
-  const status = document.createElement("p");
-  status.textContent = task.completed ? "状態：完了" : "状態：未完了";
+  const statusText = document.createElement("p");
+  statusText.textContent = "状態：";
 
-  const completeBtn = document.createElement("button");
-  completeBtn.textContent = task.completed ? "未完了に戻す" : "完了にする";
+  const statusBadge = document.createElement("span");
+  statusBadge.classList.add("status-badge");
+  statusBadge.classList.add(getStatusClass(task.status));
+  statusBadge.textContent = getStatusLabel(task.status);
 
-  completeBtn.addEventListener("click", function () {
-    task.completed = !task.completed;
+  statusText.appendChild(statusBadge);
+
+  const statusSelect = renderStatusSelect(task.status);
+
+  const changeStatusBtn = document.createElement("button");
+  changeStatusBtn.classList.add("modal-status-btn");
+  changeStatusBtn.textContent = "状態を変更";
+
+  changeStatusBtn.addEventListener("click", function () {
+    task.status = statusSelect.value;
 
     saveTasks();
-    renderCalendar();
-    renderTaskList();
-    renderGanttChart();
+    refreshAllViews();
     renderTaskDetail(task);
   });
 
   const editBtn = document.createElement("button");
+  editBtn.classList.add("modal-edit-btn");
   editBtn.textContent = "編集";
 
   editBtn.addEventListener("click", function () {
@@ -135,6 +285,7 @@ function renderTaskDetail(task) {
   });
 
   const deleteBtn = document.createElement("button");
+  deleteBtn.classList.add("modal-delete-btn");
   deleteBtn.textContent = "削除";
 
   deleteBtn.addEventListener("click", function () {
@@ -149,13 +300,12 @@ function renderTaskDetail(task) {
     });
 
     saveTasks();
-    renderCalendar();
-    renderTaskList();
-    renderGanttChart();
+    refreshAllViews();
     closeModal();
   });
 
   const closeBtn = document.createElement("button");
+  closeBtn.classList.add("modal-close-btn");
   closeBtn.textContent = "閉じる";
 
   closeBtn.addEventListener("click", function () {
@@ -167,8 +317,9 @@ function renderTaskDetail(task) {
   modalContent.appendChild(assignee);
   modalContent.appendChild(createdAt);
   modalContent.appendChild(deadline);
-  modalContent.appendChild(status);
-  modalContent.appendChild(completeBtn);
+  modalContent.appendChild(statusText);
+  modalContent.appendChild(statusSelect);
+  modalContent.appendChild(changeStatusBtn);
   modalContent.appendChild(editBtn);
   modalContent.appendChild(deleteBtn);
   modalContent.appendChild(closeBtn);
@@ -215,7 +366,13 @@ function renderEditForm(task) {
   deadlineEdit.type = "date";
   deadlineEdit.value = task.deadline;
 
+  const statusLabel = document.createElement("label");
+  statusLabel.textContent = "状態";
+
+  const statusEdit = renderStatusSelect(task.status);
+
   const saveBtn = document.createElement("button");
+  saveBtn.classList.add("modal-save-btn");
   saveBtn.textContent = "保存";
 
   saveBtn.addEventListener("click", function () {
@@ -238,24 +395,22 @@ function renderEditForm(task) {
     task.assignee = assigneeEdit.value;
     task.createdAt = startDateEdit.value;
     task.deadline = deadlineEdit.value;
+    task.status = statusEdit.value;
 
     saveTasks();
 
     viewDate = new Date(task.deadline);
 
-    renderCalendar();
-    renderTaskList();
-    renderGanttChart();
+    refreshAllViews();
     renderTaskDetail(task);
-
-    closeModal();
   });
 
   const cancelBtn = document.createElement("button");
+  cancelBtn.classList.add("modal-cancel-btn");
   cancelBtn.textContent = "キャンセル";
 
   cancelBtn.addEventListener("click", function () {
-    closeModal();
+    renderTaskDetail(task);
   });
 
   modalContent.appendChild(titleLabel);
@@ -268,6 +423,8 @@ function renderEditForm(task) {
   modalContent.appendChild(startDateEdit);
   modalContent.appendChild(deadlineLabel);
   modalContent.appendChild(deadlineEdit);
+  modalContent.appendChild(statusLabel);
+  modalContent.appendChild(statusEdit);
   modalContent.appendChild(saveBtn);
   modalContent.appendChild(cancelBtn);
 }
@@ -301,6 +458,7 @@ function renderCalendar() {
 
   let dateCount = 1;
   const todayString = getTodayString();
+  const filteredTasks = getFilteredTasks();
 
   for (let week = 0; week < 6; week++) {
     const tr = document.createElement("tr");
@@ -329,30 +487,19 @@ function renderCalendar() {
           td.classList.add("today");
         }
 
-        tasks.forEach(function (task) {
-          if (!task.createdAt) {
-            task.createdAt = task.deadline;
-          }
-
-          if (task.assignee === undefined) {
-            task.assignee = "";
-          }
-
+        filteredTasks.forEach(function (task) {
           if (dateString === task.deadline) {
             const taskBtn = document.createElement("button");
             taskBtn.classList.add("calendar-task-btn");
+            taskBtn.classList.add(getStatusClass(task.status));
 
-            const isExpired = task.deadline < todayString && !task.completed;
+            const expired = isTaskExpired(task);
 
-            taskBtn.textContent = isExpired ? "⚠ " + task.title : task.title;
-
-            if (task.completed) {
-              taskBtn.classList.add("completed");
-            }
-
-            if (isExpired) {
+            if (expired) {
               taskBtn.classList.add("expired");
             }
+
+            taskBtn.textContent = expired ? "⚠ " + task.title : task.title;
 
             taskBtn.addEventListener("click", function () {
               renderTaskDetail(task);
@@ -377,49 +524,41 @@ function renderCalendar() {
 
   calendarTableArea.appendChild(calendarTable);
 }
-
 function renderTaskList() {
   taskListArea.innerHTML = "";
 
-  if (tasks.length === 0) {
-    taskListArea.innerHTML = "<p>タスクがありません</p>";
+  const filteredTasks = getFilteredTasks();
+
+  if (filteredTasks.length === 0) {
+    taskListArea.innerHTML = "<p>該当するタスクがありません</p>";
     return;
   }
 
-  const todayString = getTodayString();
-
-  tasks
+  filteredTasks
     .slice()
     .sort(function (a, b) {
       return a.deadline.localeCompare(b.deadline);
     })
     .forEach(function (task) {
-      if (!task.createdAt) {
-        task.createdAt = task.deadline;
-      }
-
-      if (task.assignee === undefined) {
-        task.assignee = "";
-      }
-
       const item = document.createElement("div");
       item.classList.add("task-list-item");
+      item.classList.add(getStatusClass(task.status));
 
-      const isExpired = task.deadline < todayString && !task.completed;
+      const expired = isTaskExpired(task);
 
-      if (isExpired) {
+      if (expired) {
         item.classList.add("expired");
       }
 
       const title = document.createElement("div");
       title.classList.add("task-list-title");
-      title.textContent = isExpired ? "⚠ " + task.title : task.title;
+      title.textContent = expired ? "⚠ " + task.title : task.title;
 
       const meta = document.createElement("div");
       meta.classList.add("task-list-meta");
 
       const assigneeText = task.assignee ? task.assignee : "未設定";
-      const statusText = task.completed ? "完了" : "未完了";
+      const statusText = getStatusLabel(task.status);
 
       meta.textContent =
         "担当者：" +
@@ -445,8 +584,10 @@ function renderTaskList() {
 function renderGanttChart() {
   ganttChartArea.innerHTML = "";
 
-  if (tasks.length === 0) {
-    ganttChartArea.innerHTML = "<p>タスクがありません</p>";
+  const filteredTasks = getFilteredTasks();
+
+  if (filteredTasks.length === 0) {
+    ganttChartArea.innerHTML = "<p>該当するタスクがありません</p>";
     return;
   }
 
@@ -494,16 +635,12 @@ function renderGanttChart() {
 
   grid.appendChild(headerRow);
 
-  tasks
+  filteredTasks
     .slice()
     .sort(function (a, b) {
       return a.deadline.localeCompare(b.deadline);
     })
     .forEach(function (task) {
-      if (!task.createdAt) {
-        task.createdAt = task.deadline;
-      }
-
       const row = document.createElement("div");
       row.classList.add("gantt-row");
 
@@ -520,7 +657,7 @@ function renderGanttChart() {
         const isInRange =
           dateString >= task.createdAt && dateString <= task.deadline;
 
-        const isExpired = task.deadline < todayString && !task.completed;
+        const expired = isTaskExpired(task);
 
         if (dateString === todayString) {
           cell.classList.add("gantt-today");
@@ -529,12 +666,9 @@ function renderGanttChart() {
         if (isInRange) {
           const bar = document.createElement("div");
           bar.classList.add("gantt-bar");
+          bar.classList.add(getStatusClass(task.status));
 
-          if (task.completed) {
-            bar.classList.add("completed");
-          }
-
-          if (isExpired) {
+          if (expired) {
             bar.classList.add("expired");
           }
 
@@ -555,12 +689,129 @@ function renderGanttChart() {
   ganttChartArea.appendChild(wrapper);
 }
 
+function renderBoard() {
+  boardContentArea.innerHTML = "";
+
+  const filteredTasks = getFilteredTasks();
+
+  if (filteredTasks.length === 0) {
+    boardContentArea.innerHTML = "<p>該当するタスクがありません</p>";
+    return;
+  }
+
+  const columns = document.createElement("div");
+  columns.classList.add("board-columns");
+
+  STATUS_LIST.forEach(function (status) {
+    const column = document.createElement("div");
+    column.classList.add("board-column");
+    column.dataset.status = status.value;
+
+    column.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      column.classList.add("drag-over");
+    });
+
+    column.addEventListener("dragleave", function () {
+      column.classList.remove("drag-over");
+    });
+
+    column.addEventListener("drop", function (event) {
+      event.preventDefault();
+      column.classList.remove("drag-over");
+
+      const taskId = Number(event.dataTransfer.getData("taskId"));
+
+      const targetTask = tasks.find(function (task) {
+        return task.id === taskId;
+      });
+
+      if (!targetTask) {
+        return;
+      }
+
+      targetTask.status = column.dataset.status;
+
+      saveTasks();
+      refreshAllViews();
+    });
+
+    const heading = document.createElement("h4");
+    heading.textContent = status.label;
+    column.appendChild(heading);
+
+    const statusTasks = filteredTasks
+      .slice()
+      .filter(function (task) {
+        return task.status === status.value;
+      })
+      .sort(function (a, b) {
+        return a.deadline.localeCompare(b.deadline);
+      });
+
+    if (statusTasks.length === 0) {
+      const emptyText = document.createElement("p");
+      emptyText.textContent = "なし";
+      emptyText.classList.add("task-list-meta");
+      column.appendChild(emptyText);
+    }
+
+    statusTasks.forEach(function (task) {
+      const card = document.createElement("div");
+      card.classList.add("board-card");
+      card.classList.add(getStatusClass(task.status));
+      card.draggable = true;
+
+      const expired = isTaskExpired(task);
+
+      if (expired) {
+        card.classList.add("expired");
+      }
+
+      card.addEventListener("dragstart", function (event) {
+        event.dataTransfer.setData("taskId", task.id);
+        card.classList.add("dragging");
+      });
+
+      card.addEventListener("dragend", function () {
+        card.classList.remove("dragging");
+      });
+
+      const title = document.createElement("div");
+      title.classList.add("board-card-title");
+      title.textContent = expired ? "⚠ " + task.title : task.title;
+
+      const meta = document.createElement("div");
+      meta.classList.add("board-card-meta");
+
+      const assigneeText = task.assignee ? task.assignee : "未設定";
+
+      meta.textContent =
+        "担当者：" + assigneeText + " / 締切：" + task.deadline;
+
+      card.appendChild(title);
+      card.appendChild(meta);
+
+      card.addEventListener("click", function () {
+        renderTaskDetail(task);
+      });
+
+      column.appendChild(card);
+    });
+
+    columns.appendChild(column);
+  });
+
+  boardContentArea.appendChild(columns);
+}
+
 addBtn.addEventListener("click", function () {
   const title = titleInput.value;
   const description = descriptionInput.value;
   const assignee = assigneeInput.value;
   const startDate = startDateInput.value;
   const deadline = deadlineInput.value;
+  const status = statusInput.value;
 
   if (title === "" || startDate === "" || deadline === "") {
     errorMessage.textContent = "課題名、開始日、締切日は必須です";
@@ -581,7 +832,7 @@ addBtn.addEventListener("click", function () {
     assignee: assignee,
     createdAt: startDate,
     deadline: deadline,
-    completed: false
+    status: status
   };
 
   tasks.push(task);
@@ -589,15 +840,14 @@ addBtn.addEventListener("click", function () {
 
   viewDate = new Date(deadline);
 
-  renderCalendar();
-  renderTaskList();
-  renderGanttChart();
+  refreshAllViews();
 
   titleInput.value = "";
   descriptionInput.value = "";
   assigneeInput.value = "";
   startDateInput.value = getTodayString();
   deadlineInput.value = "";
+  statusInput.value = "todo";
 });
 
 prevBtn.addEventListener("click", function () {
@@ -631,5 +881,22 @@ boardTab.addEventListener("click", function () {
   switchView("board");
 });
 
+searchInput.addEventListener("input", function () {
+  searchKeyword = searchInput.value.trim();
+  refreshAllViews();
+});
+
+statusFilter.addEventListener("change", function () {
+  selectedStatusFilter = statusFilter.value;
+  refreshAllViews();
+});
+
+deadlineFilter.addEventListener("change", function () {
+  selectedDeadlineFilter = deadlineFilter.value;
+  refreshAllViews();
+});
+
 startDateInput.value = getTodayString();
+
+normalizeTasks();
 renderCalendar();
