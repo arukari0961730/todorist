@@ -34,7 +34,24 @@ const boardContentArea = document.getElementById("boardContentArea");
 
 const searchInput = document.getElementById("searchInput");
 const statusFilter = document.getElementById("statusFilter");
+const assigneeFilter = document.getElementById("assigneeFilter");
 const deadlineFilter = document.getElementById("deadlineFilter");
+
+const allCount = document.getElementById("allCount");
+const todoCount = document.getElementById("todoCount");
+const workingCount = document.getElementById("workingCount");
+const reviewCount = document.getElementById("reviewCount");
+const fixCount = document.getElementById("fixCount");
+const doneCount = document.getElementById("doneCount");
+const expiredCount = document.getElementById("expiredCount");
+
+const allCard = document.getElementById("allCard");
+const todoCard = document.getElementById("todoCard");
+const workingCard = document.getElementById("workingCard");
+const reviewCard = document.getElementById("reviewCard");
+const fixCard = document.getElementById("fixCard");
+const doneCard = document.getElementById("doneCard");
+const expiredCard = document.getElementById("expiredCard");
 
 const STATUS_LIST = [
   { value: "todo", label: "未着手" },
@@ -49,6 +66,7 @@ let viewDate = new Date();
 
 let searchKeyword = "";
 let selectedStatusFilter = "all";
+let selectedAssigneeFilter = "all";
 let selectedDeadlineFilter = "all";
 
 function saveTasks() {
@@ -92,6 +110,51 @@ function isTaskDueToday(task) {
   return task.deadline === getTodayString();
 }
 
+function getTaskAssignee(task) {
+  if (!task.assignee || task.assignee.trim() === "") {
+    return "未設定";
+  }
+
+  return task.assignee.trim();
+}
+function renderAssigneeFilterOptions() {
+  const currentValue = assigneeFilter.value;
+
+  assigneeFilter.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "すべての担当者";
+  assigneeFilter.appendChild(allOption);
+
+  const assignees = [];
+
+  tasks.forEach(function (task) {
+    const assigneeName = getTaskAssignee(task);
+
+    if (!assignees.includes(assigneeName)) {
+      assignees.push(assigneeName);
+    }
+  });
+
+  assignees.sort();
+
+  assignees.forEach(function (assigneeName) {
+    const option = document.createElement("option");
+    option.value = assigneeName;
+    option.textContent = assigneeName;
+    assigneeFilter.appendChild(option);
+  });
+
+  if (currentValue === "all" || assignees.includes(currentValue)) {
+    assigneeFilter.value = currentValue;
+    selectedAssigneeFilter = currentValue;
+  } else {
+    assigneeFilter.value = "all";
+    selectedAssigneeFilter = "all";
+  }
+}
+
 function getFilteredTasks() {
   let result = tasks.slice();
 
@@ -101,7 +164,7 @@ function getFilteredTasks() {
 
       const title = task.title.toLowerCase();
       const description = task.description.toLowerCase();
-      const assignee = task.assignee.toLowerCase();
+      const assignee = getTaskAssignee(task).toLowerCase();
       const statusLabel = getStatusLabel(task.status).toLowerCase();
 
       return (
@@ -116,6 +179,12 @@ function getFilteredTasks() {
   if (selectedStatusFilter !== "all") {
     result = result.filter(function (task) {
       return task.status === selectedStatusFilter;
+    });
+  }
+
+  if (selectedAssigneeFilter !== "all") {
+    result = result.filter(function (task) {
+      return getTaskAssignee(task) === selectedAssigneeFilter;
     });
   }
 
@@ -158,6 +227,34 @@ function normalizeTasks() {
   });
 
   saveTasks();
+}
+
+function renderDashboard() {
+  allCount.textContent = tasks.length;
+
+  todoCount.textContent = tasks.filter(function (task) {
+    return task.status === "todo";
+  }).length;
+
+  workingCount.textContent = tasks.filter(function (task) {
+    return task.status === "working";
+  }).length;
+
+  reviewCount.textContent = tasks.filter(function (task) {
+    return task.status === "review";
+  }).length;
+
+  fixCount.textContent = tasks.filter(function (task) {
+    return task.status === "fix";
+  }).length;
+
+  doneCount.textContent = tasks.filter(function (task) {
+    return task.status === "done";
+  }).length;
+
+  expiredCount.textContent = tasks.filter(function (task) {
+    return isTaskExpired(task);
+  }).length;
 }
 
 function closeModal() {
@@ -226,6 +323,8 @@ function renderStatusSelect(selectedStatus) {
 }
 
 function refreshAllViews() {
+  renderAssigneeFilterOptions();
+  renderDashboard();
   renderCalendar();
   renderTaskList();
   renderGanttChart();
@@ -243,8 +342,7 @@ function renderTaskDetail(task) {
     task.description === "" ? "詳細：なし" : "詳細：" + task.description;
 
   const assignee = document.createElement("p");
-  assignee.textContent =
-    !task.assignee ? "担当者：未設定" : "担当者：" + task.assignee;
+  assignee.textContent = "担当者：" + getTaskAssignee(task);
 
   const createdAt = document.createElement("p");
   createdAt.textContent = "開始日：" + task.createdAt;
@@ -557,7 +655,7 @@ function renderTaskList() {
       const meta = document.createElement("div");
       meta.classList.add("task-list-meta");
 
-      const assigneeText = task.assignee ? task.assignee : "未設定";
+      const assigneeText = getTaskAssignee(task);
       const statusText = getStatusLabel(task.status);
 
       meta.textContent =
@@ -784,7 +882,7 @@ function renderBoard() {
       const meta = document.createElement("div");
       meta.classList.add("board-card-meta");
 
-      const assigneeText = task.assignee ? task.assignee : "未設定";
+      const assigneeText = getTaskAssignee(task);
 
       meta.textContent =
         "担当者：" + assigneeText + " / 締切：" + task.deadline;
@@ -891,12 +989,65 @@ statusFilter.addEventListener("change", function () {
   refreshAllViews();
 });
 
+assigneeFilter.addEventListener("change", function () {
+  selectedAssigneeFilter = assigneeFilter.value;
+  refreshAllViews();
+});
+
 deadlineFilter.addEventListener("change", function () {
   selectedDeadlineFilter = deadlineFilter.value;
+  refreshAllViews();
+});
+
+allCard.addEventListener("click", function () {
+  statusFilter.value = "all";
+  deadlineFilter.value = "all";
+
+  selectedStatusFilter = "all";
+  selectedDeadlineFilter = "all";
+
+  refreshAllViews();
+});
+
+todoCard.addEventListener("click", function () {
+  statusFilter.value = "todo";
+  selectedStatusFilter = "todo";
+  refreshAllViews();
+});
+
+workingCard.addEventListener("click", function () {
+  statusFilter.value = "working";
+  selectedStatusFilter = "working";
+  refreshAllViews();
+});
+
+reviewCard.addEventListener("click", function () {
+  statusFilter.value = "review";
+  selectedStatusFilter = "review";
+  refreshAllViews();
+});
+
+fixCard.addEventListener("click", function () {
+  statusFilter.value = "fix";
+  selectedStatusFilter = "fix";
+  refreshAllViews();
+});
+
+doneCard.addEventListener("click", function () {
+  statusFilter.value = "done";
+  selectedStatusFilter = "done";
+  refreshAllViews();
+});
+
+expiredCard.addEventListener("click", function () {
+  deadlineFilter.value = "expired";
+  selectedDeadlineFilter = "expired";
   refreshAllViews();
 });
 
 startDateInput.value = getTodayString();
 
 normalizeTasks();
+renderAssigneeFilterOptions();
+renderDashboard();
 renderCalendar();

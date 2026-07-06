@@ -74,7 +74,50 @@
 
         <p id="errorMessage"></p>
       </section>
+      <section class="dashboard-section">
 
+        <h2>ダッシュボード</h2>
+
+        <div class="dashboard-grid">
+
+          <div class="dashboard-card" id="allCard">
+            <div class="dashboard-count" id="allCount">0</div>
+            <div>全体</div>
+          </div>
+
+          <div class="dashboard-card status-todo" id="todoCard">
+            <div class="dashboard-count" id="todoCount">0</div>
+            <div>未着手</div>
+          </div>
+
+          <div class="dashboard-card status-working" id="workingCard">
+            <div class="dashboard-count" id="workingCount">0</div>
+            <div>作業中</div>
+          </div>
+
+          <div class="dashboard-card status-review" id="reviewCard">
+            <div class="dashboard-count" id="reviewCount">0</div>
+            <div>確認待ち</div>
+          </div>
+
+          <div class="dashboard-card status-fix" id="fixCard">
+            <div class="dashboard-count" id="fixCount">0</div>
+            <div>修正中</div>
+          </div>
+
+          <div class="dashboard-card status-done" id="doneCard">
+            <div class="dashboard-count" id="doneCount">0</div>
+            <div>完了</div>
+          </div>
+
+          <div class="dashboard-card expired-card" id="expiredCard">
+            <div class="dashboard-count" id="expiredCount">0</div>
+            <div>期限切れ</div>
+          </div>
+
+        </div>
+
+      </section>
       <section class="calendar-section">
         <div class="section-header">
           <h2>作業管理</h2>
@@ -100,7 +143,9 @@
             <option value="fix">修正中</option>
             <option value="done">完了</option>
           </select>
-
+          <select id="assigneeFilter">
+            <option value="all">すべての担当者</option>
+          </select>
           <select id="deadlineFilter">
             <option value="all">すべての期限</option>
             <option value="expired">期限切れのみ</option>
@@ -142,3 +187,5 @@
 </body>
 
 </html>
+
+form-section
