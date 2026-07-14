@@ -3,13 +3,22 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>ゲーム開発サークル向け作業管理アプリ</title>
+
   <link rel="stylesheet" href="todorist.css">
-  <script src="todorist.js" defer></script>
+
+  <!--
+    type="module" を付けることで、
+    todorist.js から data.js を読み込める
+  -->
+  <script type="module" src="todorist.js"></script>
 </head>
 
 <body>
 
+  <!-- タスク詳細・編集モーダル -->
   <div id="modalOverlay" class="modal-overlay hidden">
     <div class="modal">
       <h2>課題詳細</h2>
@@ -17,18 +26,28 @@
     </div>
   </div>
 
+  <!-- ヘッダー -->
   <header class="app-header">
     <h1>ゲーム開発サークル向け作業管理アプリ</h1>
   </header>
 
   <div class="app-layout">
 
+    <!-- サイドバー -->
     <aside class="sidebar">
       <h2>チーム</h2>
 
-      <button class="team-btn active">個人ゲーム制作チーム</button>
-      <button class="team-btn">マルチゲーム制作チーム</button>
-      <button class="team-btn">ガッツリゲーム制作チーム</button>
+      <button class="team-btn active">
+        個人ゲーム制作チーム
+      </button>
+
+      <button class="team-btn">
+        マルチゲーム制作チーム
+      </button>
+
+      <button class="team-btn">
+        ガッツリゲーム制作チーム
+      </button>
 
       <hr>
 
@@ -41,27 +60,29 @@
       </nav>
     </aside>
 
+    <!-- メイン -->
     <main class="main-content">
 
+      <!-- タスク追加 -->
       <section class="form-section">
         <h2>課題を追加</h2>
 
-        <label>課題名</label>
+        <label for="titleInput">課題名</label>
         <input type="text" id="titleInput">
 
-        <label>詳細</label>
+        <label for="descriptionInput">詳細</label>
         <textarea id="descriptionInput"></textarea>
 
-        <label>担当者</label>
+        <label for="assigneeInput">担当者</label>
         <input type="text" id="assigneeInput">
 
-        <label>開始日</label>
+        <label for="startDateInput">開始日</label>
         <input type="date" id="startDateInput">
 
-        <label>締切日</label>
+        <label for="deadlineInput">締切日</label>
         <input type="date" id="deadlineInput">
 
-        <label>状態</label>
+        <label for="statusInput">状態</label>
         <select id="statusInput">
           <option value="todo">未着手</option>
           <option value="working">作業中</option>
@@ -74,8 +95,9 @@
 
         <p id="errorMessage"></p>
       </section>
-      <section class="dashboard-section">
 
+      <!-- ダッシュボード -->
+      <section class="dashboard-section">
         <h2>ダッシュボード</h2>
 
         <div class="dashboard-grid">
@@ -85,56 +107,97 @@
             <div>全体</div>
           </div>
 
-          <div class="dashboard-card status-todo" id="todoCard">
+          <div
+            class="dashboard-card status-todo"
+            id="todoCard"
+          >
             <div class="dashboard-count" id="todoCount">0</div>
             <div>未着手</div>
           </div>
 
-          <div class="dashboard-card status-working" id="workingCard">
+          <div
+            class="dashboard-card status-working"
+            id="workingCard"
+          >
             <div class="dashboard-count" id="workingCount">0</div>
             <div>作業中</div>
           </div>
 
-          <div class="dashboard-card status-review" id="reviewCard">
+          <div
+            class="dashboard-card status-review"
+            id="reviewCard"
+          >
             <div class="dashboard-count" id="reviewCount">0</div>
             <div>確認待ち</div>
           </div>
 
-          <div class="dashboard-card status-fix" id="fixCard">
+          <div
+            class="dashboard-card status-fix"
+            id="fixCard"
+          >
             <div class="dashboard-count" id="fixCount">0</div>
             <div>修正中</div>
           </div>
 
-          <div class="dashboard-card status-done" id="doneCard">
+          <div
+            class="dashboard-card status-done"
+            id="doneCard"
+          >
             <div class="dashboard-count" id="doneCount">0</div>
             <div>完了</div>
           </div>
 
-          <div class="dashboard-card expired-card" id="expiredCard">
+          <div
+            class="dashboard-card expired-card"
+            id="expiredCard"
+          >
             <div class="dashboard-count" id="expiredCount">0</div>
             <div>期限切れ</div>
           </div>
 
         </div>
-
       </section>
+
+      <!-- 作業管理 -->
       <section class="calendar-section">
+
         <div class="section-header">
           <h2>作業管理</h2>
 
           <div class="view-tabs">
-            <button id="calendarTab" class="tab-btn active">カレンダー</button>
-            <button id="listTab" class="tab-btn">一覧</button>
-            <button id="ganttTab" class="tab-btn">ガント</button>
-            <button id="boardTab" class="tab-btn">ボード</button>
+            <button
+              id="calendarTab"
+              class="tab-btn active"
+            >
+              カレンダー
+            </button>
+
+            <button id="listTab" class="tab-btn">
+              一覧
+            </button>
+
+            <button id="ganttTab" class="tab-btn">
+              ガント
+            </button>
+
+            <button id="boardTab" class="tab-btn">
+              ボード
+            </button>
           </div>
         </div>
 
+        <!-- 検索 -->
         <div class="search-area">
-          <input type="text" id="searchInput" placeholder="課題名・詳細・担当者・状態で検索">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="課題名・詳細・担当者・状態で検索"
+          >
         </div>
 
+        <!-- フィルター -->
         <div class="filter-area">
+
           <select id="statusFilter">
             <option value="all">すべての状態</option>
             <option value="todo">未着手</option>
@@ -143,47 +206,60 @@
             <option value="fix">修正中</option>
             <option value="done">完了</option>
           </select>
+
           <select id="assigneeFilter">
             <option value="all">すべての担当者</option>
           </select>
+
           <select id="deadlineFilter">
             <option value="all">すべての期限</option>
             <option value="expired">期限切れのみ</option>
             <option value="today">今日締切のみ</option>
           </select>
+
+          <select id="sortFilter">
+            <option value="deadline">締切が近い順</option>
+            <option value="startDate">開始日が早い順</option>
+            <option value="title">課題名順</option>
+            <option value="assignee">担当者順</option>
+            <option value="status">状態順</option>
+          </select>
+
         </div>
-        <select id="sortFilter">
-          <option value="deadline">締切が近い順</option>
-          <option value="startDate">開始日が早い順</option>
-          <option value="title">課題名順</option>
-          <option value="assignee">担当者順</option>
-          <option value="status">状態順</option>
-        </select>
+
+        <!-- カレンダー -->
         <div id="calendarArea" class="view-content">
+
           <div class="calendar-header">
             <button id="prevBtn">←</button>
             <button id="todayBtn">今日</button>
+
             <h3 id="monthTitle"></h3>
+
             <button id="nextBtn">→</button>
           </div>
 
           <div id="calendarTableArea"></div>
         </div>
 
+        <!-- 一覧 -->
         <div id="listArea" class="view-content hidden">
           <h3>タスク一覧</h3>
           <div id="taskListArea"></div>
         </div>
 
+        <!-- ガント -->
         <div id="ganttArea" class="view-content hidden">
           <h3>ガントチャート</h3>
           <div id="ganttChartArea"></div>
         </div>
 
+        <!-- ボード -->
         <div id="boardArea" class="view-content hidden">
           <h3>ボード表示</h3>
           <div id="boardContentArea"></div>
         </div>
+
       </section>
 
     </main>
