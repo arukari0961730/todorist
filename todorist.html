@@ -152,7 +152,13 @@
             <option value="today">今日締切のみ</option>
           </select>
         </div>
-
+        <select id="sortFilter">
+          <option value="deadline">締切が近い順</option>
+          <option value="startDate">開始日が早い順</option>
+          <option value="title">課題名順</option>
+          <option value="assignee">担当者順</option>
+          <option value="status">状態順</option>
+        </select>
         <div id="calendarArea" class="view-content">
           <div class="calendar-header">
             <button id="prevBtn">←</button>
@@ -187,5 +193,3 @@
 </body>
 
 </html>
-
-form-section

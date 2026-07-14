@@ -36,6 +36,7 @@ const searchInput = document.getElementById("searchInput");
 const statusFilter = document.getElementById("statusFilter");
 const assigneeFilter = document.getElementById("assigneeFilter");
 const deadlineFilter = document.getElementById("deadlineFilter");
+const sortFilter = document.getElementById("sortFilter");
 
 const allCount = document.getElementById("allCount");
 const todoCount = document.getElementById("todoCount");
@@ -61,6 +62,14 @@ const STATUS_LIST = [
   { value: "done", label: "完了" }
 ];
 
+const STATUS_ORDER = {
+  todo: 1,
+  working: 2,
+  review: 3,
+  fix: 4,
+  done: 5
+};
+
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let viewDate = new Date();
 
@@ -68,17 +77,28 @@ let searchKeyword = "";
 let selectedStatusFilter = "all";
 let selectedAssigneeFilter = "all";
 let selectedDeadlineFilter = "all";
+let selectedSort = "deadline";
 
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
 function getTodayString() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function formatDateString(date) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getStatusLabel(statusValue) {
@@ -103,6 +123,7 @@ function isTaskDone(task) {
 
 function isTaskExpired(task) {
   const todayString = getTodayString();
+
   return task.deadline < todayString && !isTaskDone(task);
 }
 
@@ -137,7 +158,9 @@ function renderAssigneeFilterOptions() {
     }
   });
 
-  assignees.sort();
+  assignees.sort(function (a, b) {
+    return a.localeCompare(b, "ja");
+  });
 
   assignees.forEach(function (assigneeName) {
     const option = document.createElement("option");
@@ -153,6 +176,46 @@ function renderAssigneeFilterOptions() {
     assigneeFilter.value = "all";
     selectedAssigneeFilter = "all";
   }
+}
+
+function sortTasks(taskArray) {
+  const sortedTasks = taskArray.slice();
+
+  sortedTasks.sort(function (a, b) {
+    if (selectedSort === "deadline") {
+      return a.deadline.localeCompare(b.deadline);
+    }
+
+    if (selectedSort === "startDate") {
+      return a.createdAt.localeCompare(b.createdAt);
+    }
+
+    if (selectedSort === "title") {
+      return a.title.localeCompare(b.title, "ja");
+    }
+
+    if (selectedSort === "assignee") {
+      return getTaskAssignee(a).localeCompare(
+        getTaskAssignee(b),
+        "ja"
+      );
+    }
+
+    if (selectedSort === "status") {
+      const statusDifference =
+        STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+
+      if (statusDifference !== 0) {
+        return statusDifference;
+      }
+
+      return a.deadline.localeCompare(b.deadline);
+    }
+
+    return a.deadline.localeCompare(b.deadline);
+  });
+
+  return sortedTasks;
 }
 
 function getFilteredTasks() {
@@ -224,6 +287,8 @@ function normalizeTasks() {
         task.status = "todo";
       }
     }
+
+    delete task.completed;
   });
 
   saveTasks();
@@ -339,16 +404,21 @@ function renderTaskDetail(task) {
 
   const description = document.createElement("p");
   description.textContent =
-    task.description === "" ? "詳細：なし" : "詳細：" + task.description;
+    task.description === ""
+      ? "詳細：なし"
+      : "詳細：" + task.description;
 
   const assignee = document.createElement("p");
-  assignee.textContent = "担当者：" + getTaskAssignee(task);
+  assignee.textContent =
+    "担当者：" + getTaskAssignee(task);
 
   const createdAt = document.createElement("p");
-  createdAt.textContent = "開始日：" + task.createdAt;
+  createdAt.textContent =
+    "開始日：" + task.createdAt;
 
   const deadline = document.createElement("p");
-  deadline.textContent = "締切日：" + task.deadline;
+  deadline.textContent =
+    "締切日：" + task.deadline;
 
   const statusText = document.createElement("p");
   statusText.textContent = "状態：";
@@ -393,8 +463,8 @@ function renderTaskDetail(task) {
       return;
     }
 
-    tasks = tasks.filter(function (t) {
-      return t.id !== task.id;
+    tasks = tasks.filter(function (targetTask) {
+      return targetTask.id !== task.id;
     });
 
     saveTasks();
@@ -474,30 +544,41 @@ function renderEditForm(task) {
   saveBtn.textContent = "保存";
 
   saveBtn.addEventListener("click", function () {
+    const editedTitle = titleEdit.value.trim();
+    const editedDescription = descriptionEdit.value.trim();
+    const editedAssignee = assigneeEdit.value.trim();
+    const editedStartDate = startDateEdit.value;
+    const editedDeadline = deadlineEdit.value;
+    const editedStatus = statusEdit.value;
+
     if (
-      titleEdit.value === "" ||
-      startDateEdit.value === "" ||
-      deadlineEdit.value === ""
+      editedTitle === "" ||
+      editedStartDate === "" ||
+      editedDeadline === ""
     ) {
       alert("課題名、開始日、締切日は必須です");
       return;
     }
 
-    if (startDateEdit.value > deadlineEdit.value) {
+    if (editedStartDate > editedDeadline) {
       alert("開始日は締切日より前の日付にしてください");
       return;
     }
 
-    task.title = titleEdit.value;
-    task.description = descriptionEdit.value;
-    task.assignee = assigneeEdit.value;
-    task.createdAt = startDateEdit.value;
-    task.deadline = deadlineEdit.value;
-    task.status = statusEdit.value;
+    task.title = editedTitle;
+    task.description = editedDescription;
+    task.assignee = editedAssignee;
+    task.createdAt = editedStartDate;
+    task.deadline = editedDeadline;
+    task.status = editedStatus;
 
     saveTasks();
 
-    viewDate = new Date(task.deadline);
+    viewDate = new Date(
+      Number(editedDeadline.slice(0, 4)),
+      Number(editedDeadline.slice(5, 7)) - 1,
+      Number(editedDeadline.slice(8, 10))
+    );
 
     refreshAllViews();
     renderTaskDetail(task);
@@ -533,12 +614,21 @@ function renderCalendar() {
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  monthTitle.textContent = `${year}年${month + 1}月`;
+  monthTitle.textContent =
+    `${year}年${month + 1}月`;
 
   const calendarTable = document.createElement("table");
 
   const headerRow = document.createElement("tr");
-  const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+  const weekDays = [
+    "日",
+    "月",
+    "火",
+    "水",
+    "木",
+    "金",
+    "土"
+  ];
 
   weekDays.forEach(function (day) {
     const th = document.createElement("th");
@@ -555,8 +645,9 @@ function renderCalendar() {
   const lastDay = lastDate.getDate();
 
   let dateCount = 1;
+
   const todayString = getTodayString();
-  const filteredTasks = getFilteredTasks();
+  const filteredTasks = sortTasks(getFilteredTasks());
 
   for (let week = 0; week < 6; week++) {
     const tr = document.createElement("tr");
@@ -586,25 +677,31 @@ function renderCalendar() {
         }
 
         filteredTasks.forEach(function (task) {
-          if (dateString === task.deadline) {
-            const taskBtn = document.createElement("button");
-            taskBtn.classList.add("calendar-task-btn");
-            taskBtn.classList.add(getStatusClass(task.status));
-
-            const expired = isTaskExpired(task);
-
-            if (expired) {
-              taskBtn.classList.add("expired");
-            }
-
-            taskBtn.textContent = expired ? "⚠ " + task.title : task.title;
-
-            taskBtn.addEventListener("click", function () {
-              renderTaskDetail(task);
-            });
-
-            td.appendChild(taskBtn);
+          if (dateString !== task.deadline) {
+            return;
           }
+
+          const taskBtn = document.createElement("button");
+          taskBtn.classList.add("calendar-task-btn");
+          taskBtn.classList.add(
+            getStatusClass(task.status)
+          );
+
+          const expired = isTaskExpired(task);
+
+          if (expired) {
+            taskBtn.classList.add("expired");
+          }
+
+          taskBtn.textContent = expired
+            ? "⚠ " + task.title
+            : task.title;
+
+          taskBtn.addEventListener("click", function () {
+            renderTaskDetail(task);
+          });
+
+          td.appendChild(taskBtn);
         });
 
         dateCount++;
@@ -625,67 +722,66 @@ function renderCalendar() {
 function renderTaskList() {
   taskListArea.innerHTML = "";
 
-  const filteredTasks = getFilteredTasks();
+  const filteredTasks = sortTasks(getFilteredTasks());
 
   if (filteredTasks.length === 0) {
-    taskListArea.innerHTML = "<p>該当するタスクがありません</p>";
+    taskListArea.innerHTML =
+      "<p>該当するタスクがありません</p>";
     return;
   }
 
-  filteredTasks
-    .slice()
-    .sort(function (a, b) {
-      return a.deadline.localeCompare(b.deadline);
-    })
-    .forEach(function (task) {
-      const item = document.createElement("div");
-      item.classList.add("task-list-item");
-      item.classList.add(getStatusClass(task.status));
+  filteredTasks.forEach(function (task) {
+    const item = document.createElement("div");
+    item.classList.add("task-list-item");
+    item.classList.add(getStatusClass(task.status));
 
-      const expired = isTaskExpired(task);
+    const expired = isTaskExpired(task);
 
-      if (expired) {
-        item.classList.add("expired");
-      }
+    if (expired) {
+      item.classList.add("expired");
+    }
 
-      const title = document.createElement("div");
-      title.classList.add("task-list-title");
-      title.textContent = expired ? "⚠ " + task.title : task.title;
+    const title = document.createElement("div");
+    title.classList.add("task-list-title");
+    title.textContent = expired
+      ? "⚠ " + task.title
+      : task.title;
 
-      const meta = document.createElement("div");
-      meta.classList.add("task-list-meta");
+    const meta = document.createElement("div");
+    meta.classList.add("task-list-meta");
 
-      const assigneeText = getTaskAssignee(task);
-      const statusText = getStatusLabel(task.status);
+    const assigneeText = getTaskAssignee(task);
+    const statusText = getStatusLabel(task.status);
 
-      meta.textContent =
-        "担当者：" +
-        assigneeText +
-        " / 開始日：" +
-        task.createdAt +
-        " / 締切：" +
-        task.deadline +
-        " / 状態：" +
-        statusText;
+    meta.textContent =
+      "担当者：" +
+      assigneeText +
+      " / 開始日：" +
+      task.createdAt +
+      " / 締切：" +
+      task.deadline +
+      " / 状態：" +
+      statusText;
 
-      item.appendChild(title);
-      item.appendChild(meta);
+    item.appendChild(title);
+    item.appendChild(meta);
 
-      item.addEventListener("click", function () {
-        renderTaskDetail(task);
-      });
-
-      taskListArea.appendChild(item);
+    item.addEventListener("click", function () {
+      renderTaskDetail(task);
     });
+
+    taskListArea.appendChild(item);
+  });
 }
 
 function renderGanttChart() {
   ganttChartArea.innerHTML = "";
 
-  const filteredTasks = getFilteredTasks();
+  const filteredTasks = sortTasks(getFilteredTasks());
 
   if (filteredTasks.length === 0) {
-    ganttChartArea.innerHTML = "<p>該当するタスクがありません</p>";
+    ganttChartArea.innerHTML =
+      "<p>該当するタスクがありません</p>";
     return;
   }
 
@@ -696,6 +792,7 @@ function renderGanttChart() {
 
   for (let i = 0; i < 14; i++) {
     const date = new Date(startDate);
+
     date.setDate(startDate.getDate() + i);
     dates.push(date);
   }
@@ -707,7 +804,10 @@ function renderGanttChart() {
   grid.classList.add("gantt-grid");
 
   const headerRow = document.createElement("div");
-  headerRow.classList.add("gantt-row", "gantt-header");
+  headerRow.classList.add(
+    "gantt-row",
+    "gantt-header"
+  );
 
   const taskHeader = document.createElement("div");
   taskHeader.classList.add("gantt-task-name");
@@ -733,55 +833,52 @@ function renderGanttChart() {
 
   grid.appendChild(headerRow);
 
-  filteredTasks
-    .slice()
-    .sort(function (a, b) {
-      return a.deadline.localeCompare(b.deadline);
-    })
-    .forEach(function (task) {
-      const row = document.createElement("div");
-      row.classList.add("gantt-row");
+  filteredTasks.forEach(function (task) {
+    const row = document.createElement("div");
+    row.classList.add("gantt-row");
 
-      const taskName = document.createElement("div");
-      taskName.classList.add("gantt-task-name");
-      taskName.textContent = task.title;
-      row.appendChild(taskName);
+    const taskName = document.createElement("div");
+    taskName.classList.add("gantt-task-name");
+    taskName.textContent = task.title;
+    row.appendChild(taskName);
 
-      dates.forEach(function (date) {
-        const cell = document.createElement("div");
-        cell.classList.add("gantt-date-cell");
+    dates.forEach(function (date) {
+      const cell = document.createElement("div");
+      cell.classList.add("gantt-date-cell");
 
-        const dateString = formatDateString(date);
-        const isInRange =
-          dateString >= task.createdAt && dateString <= task.deadline;
+      const dateString = formatDateString(date);
 
-        const expired = isTaskExpired(task);
+      const isInRange =
+        dateString >= task.createdAt &&
+        dateString <= task.deadline;
 
-        if (dateString === todayString) {
-          cell.classList.add("gantt-today");
+      const expired = isTaskExpired(task);
+
+      if (dateString === todayString) {
+        cell.classList.add("gantt-today");
+      }
+
+      if (isInRange) {
+        const bar = document.createElement("div");
+        bar.classList.add("gantt-bar");
+        bar.classList.add(getStatusClass(task.status));
+
+        if (expired) {
+          bar.classList.add("expired");
         }
 
-        if (isInRange) {
-          const bar = document.createElement("div");
-          bar.classList.add("gantt-bar");
-          bar.classList.add(getStatusClass(task.status));
+        bar.addEventListener("click", function () {
+          renderTaskDetail(task);
+        });
 
-          if (expired) {
-            bar.classList.add("expired");
-          }
+        cell.appendChild(bar);
+      }
 
-          bar.addEventListener("click", function () {
-            renderTaskDetail(task);
-          });
-
-          cell.appendChild(bar);
-        }
-
-        row.appendChild(cell);
-      });
-
-      grid.appendChild(row);
+      row.appendChild(cell);
     });
+
+    grid.appendChild(row);
+  });
 
   wrapper.appendChild(grid);
   ganttChartArea.appendChild(wrapper);
@@ -790,10 +887,11 @@ function renderGanttChart() {
 function renderBoard() {
   boardContentArea.innerHTML = "";
 
-  const filteredTasks = getFilteredTasks();
+  const filteredTasks = sortTasks(getFilteredTasks());
 
   if (filteredTasks.length === 0) {
-    boardContentArea.innerHTML = "<p>該当するタスクがありません</p>";
+    boardContentArea.innerHTML =
+      "<p>該当するタスクがありません</p>";
     return;
   }
 
@@ -818,7 +916,9 @@ function renderBoard() {
       event.preventDefault();
       column.classList.remove("drag-over");
 
-      const taskId = Number(event.dataTransfer.getData("taskId"));
+      const taskId = Number(
+        event.dataTransfer.getData("taskId")
+      );
 
       const targetTask = tasks.find(function (task) {
         return task.id === taskId;
@@ -835,17 +935,15 @@ function renderBoard() {
     });
 
     const heading = document.createElement("h4");
-    heading.textContent = status.label;
-    column.appendChild(heading);
 
-    const statusTasks = filteredTasks
-      .slice()
-      .filter(function (task) {
-        return task.status === status.value;
-      })
-      .sort(function (a, b) {
-        return a.deadline.localeCompare(b.deadline);
-      });
+    const statusTasks = filteredTasks.filter(function (task) {
+      return task.status === status.value;
+    });
+
+    heading.textContent =
+      status.label + "（" + statusTasks.length + "）";
+
+    column.appendChild(heading);
 
     if (statusTasks.length === 0) {
       const emptyText = document.createElement("p");
@@ -867,7 +965,11 @@ function renderBoard() {
       }
 
       card.addEventListener("dragstart", function (event) {
-        event.dataTransfer.setData("taskId", task.id);
+        event.dataTransfer.setData(
+          "taskId",
+          String(task.id)
+        );
+
         card.classList.add("dragging");
       });
 
@@ -877,15 +979,18 @@ function renderBoard() {
 
       const title = document.createElement("div");
       title.classList.add("board-card-title");
-      title.textContent = expired ? "⚠ " + task.title : task.title;
+      title.textContent = expired
+        ? "⚠ " + task.title
+        : task.title;
 
       const meta = document.createElement("div");
       meta.classList.add("board-card-meta");
 
-      const assigneeText = getTaskAssignee(task);
-
       meta.textContent =
-        "担当者：" + assigneeText + " / 締切：" + task.deadline;
+        "担当者：" +
+        getTaskAssignee(task) +
+        " / 締切：" +
+        task.deadline;
 
       card.appendChild(title);
       card.appendChild(meta);
@@ -904,20 +1009,26 @@ function renderBoard() {
 }
 
 addBtn.addEventListener("click", function () {
-  const title = titleInput.value;
-  const description = descriptionInput.value;
-  const assignee = assigneeInput.value;
+  const title = titleInput.value.trim();
+  const description = descriptionInput.value.trim();
+  const assignee = assigneeInput.value.trim();
   const startDate = startDateInput.value;
   const deadline = deadlineInput.value;
   const status = statusInput.value;
 
-  if (title === "" || startDate === "" || deadline === "") {
-    errorMessage.textContent = "課題名、開始日、締切日は必須です";
+  if (
+    title === "" ||
+    startDate === "" ||
+    deadline === ""
+  ) {
+    errorMessage.textContent =
+      "課題名、開始日、締切日は必須です";
     return;
   }
 
   if (startDate > deadline) {
-    errorMessage.textContent = "開始日は締切日より前の日付にしてください";
+    errorMessage.textContent =
+      "開始日は締切日より前の日付にしてください";
     return;
   }
 
@@ -936,7 +1047,11 @@ addBtn.addEventListener("click", function () {
   tasks.push(task);
   saveTasks();
 
-  viewDate = new Date(deadline);
+  viewDate = new Date(
+    Number(deadline.slice(0, 4)),
+    Number(deadline.slice(5, 7)) - 1,
+    Number(deadline.slice(8, 10))
+  );
 
   refreshAllViews();
 
@@ -999,11 +1114,18 @@ deadlineFilter.addEventListener("change", function () {
   refreshAllViews();
 });
 
+sortFilter.addEventListener("change", function () {
+  selectedSort = sortFilter.value;
+  refreshAllViews();
+});
+
 allCard.addEventListener("click", function () {
   statusFilter.value = "all";
+  assigneeFilter.value = "all";
   deadlineFilter.value = "all";
 
   selectedStatusFilter = "all";
+  selectedAssigneeFilter = "all";
   selectedDeadlineFilter = "all";
 
   refreshAllViews();
@@ -1011,37 +1133,61 @@ allCard.addEventListener("click", function () {
 
 todoCard.addEventListener("click", function () {
   statusFilter.value = "todo";
+  deadlineFilter.value = "all";
+
   selectedStatusFilter = "todo";
+  selectedDeadlineFilter = "all";
+
   refreshAllViews();
 });
 
 workingCard.addEventListener("click", function () {
   statusFilter.value = "working";
+  deadlineFilter.value = "all";
+
   selectedStatusFilter = "working";
+  selectedDeadlineFilter = "all";
+
   refreshAllViews();
 });
 
 reviewCard.addEventListener("click", function () {
   statusFilter.value = "review";
+  deadlineFilter.value = "all";
+
   selectedStatusFilter = "review";
+  selectedDeadlineFilter = "all";
+
   refreshAllViews();
 });
 
 fixCard.addEventListener("click", function () {
   statusFilter.value = "fix";
+  deadlineFilter.value = "all";
+
   selectedStatusFilter = "fix";
+  selectedDeadlineFilter = "all";
+
   refreshAllViews();
 });
 
 doneCard.addEventListener("click", function () {
   statusFilter.value = "done";
+  deadlineFilter.value = "all";
+
   selectedStatusFilter = "done";
+  selectedDeadlineFilter = "all";
+
   refreshAllViews();
 });
 
 expiredCard.addEventListener("click", function () {
+  statusFilter.value = "all";
   deadlineFilter.value = "expired";
+
+  selectedStatusFilter = "all";
   selectedDeadlineFilter = "expired";
+
   refreshAllViews();
 });
 
