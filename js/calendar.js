@@ -24,7 +24,7 @@ const DAY_LABELS = [
   "土"
 ];
 
-const CALENDAR_WEEK_COUNT = 6;
+const WEEK_COUNT = 6;
 const DAYS_PER_WEEK = 7;
 
 function runCallback(
@@ -32,18 +32,14 @@ function runCallback(
   ...args
 ) {
   if (
-    typeof callback !==
+    typeof callback ===
     "function"
   ) {
-    return;
+    callback(...args);
   }
-
-  callback(...args);
 }
 
-function isValidDate(
-  date
-) {
+function isValidDate(date) {
   return (
     date instanceof Date &&
     !Number.isNaN(
@@ -52,24 +48,17 @@ function isValidDate(
   );
 }
 
-function createSafeDate(
+function createDate(
   value
 ) {
   if (
     value instanceof Date
   ) {
-    const copiedDate =
-      new Date(
-        value.getFullYear(),
-        value.getMonth(),
-        value.getDate()
-      );
-
-    return isValidDate(
-      copiedDate
-    )
-      ? copiedDate
-      : null;
+    return new Date(
+      value.getFullYear(),
+      value.getMonth(),
+      value.getDate()
+    );
   }
 
   if (
@@ -79,31 +68,23 @@ function createSafeDate(
     return null;
   }
 
-  const dateParts =
+  const parts =
     value.split("-");
 
   if (
-    dateParts.length !== 3
+    parts.length !== 3
   ) {
     return null;
   }
 
   const year =
-    Number(dateParts[0]);
+    Number(parts[0]);
 
   const month =
-    Number(dateParts[1]);
+    Number(parts[1]);
 
   const day =
-    Number(dateParts[2]);
-
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return null;
-  }
+    Number(parts[2]);
 
   const date =
     new Date(
@@ -136,26 +117,14 @@ function formatDateString(
   const month =
     String(
       date.getMonth() + 1
-    ).padStart(
-      2,
-      "0"
-    );
+    ).padStart(2, "0");
 
   const day =
     String(
       date.getDate()
-    ).padStart(
-      2,
-      "0"
-    );
+    ).padStart(2, "0");
 
-  return (
-    year +
-    "-" +
-    month +
-    "-" +
-    day
-  );
+  return `${year}-${month}-${day}`;
 }
 
 function isSameDate(
@@ -191,83 +160,49 @@ function getCalendarStartDate(
 
   firstDay.setDate(
     firstDay.getDate() -
-      firstDay.getDay()
+    firstDay.getDay()
   );
 
   return firstDay;
 }
 
-function getTaskStartDate(
+function hasValidTaskDate(
   task
 ) {
-  if (!task) {
-    return null;
-  }
-
-  return createSafeDate(
-    task.createdAt
-  );
-}
-
-function getTaskDeadline(
-  task
-) {
-  if (!task) {
-    return null;
-  }
-
-  return createSafeDate(
-    task.deadline
-  );
-}
-
-function hasValidTaskPeriod(
-  task
-) {
-  const startDate =
-    getTaskStartDate(task);
-
-  const deadline =
-    getTaskDeadline(task);
-
   if (
-    !startDate ||
-    !deadline
+    !task ||
+    typeof task !==
+      "object"
   ) {
     return false;
   }
 
   return (
-    startDate.getTime() <=
-    deadline.getTime()
+    createDate(
+      task.deadline
+    ) !== null
   );
 }
 
-function isTaskOnDate(
+/*
+  カレンダーには締切日にだけ表示する
+*/
+function isTaskDeadlineDate(
   task,
   targetDate
 ) {
-  if (
-    !hasValidTaskPeriod(task) ||
-    !isValidDate(targetDate)
-  ) {
+  const deadline =
+    createDate(
+      task.deadline
+    );
+
+  if (!deadline) {
     return false;
   }
 
-  const startDate =
-    getTaskStartDate(task);
-
-  const deadline =
-    getTaskDeadline(task);
-
-  const targetTime =
-    targetDate.getTime();
-
-  return (
-    startDate.getTime() <=
-      targetTime &&
-    deadline.getTime() >=
-      targetTime
+  return isSameDate(
+    deadline,
+    targetDate
   );
 }
 
@@ -278,7 +213,10 @@ function createDayHeader() {
     );
 
   DAY_LABELS.forEach(
-    function (dayLabel, index) {
+    function (
+      dayLabel,
+      index
+    ) {
       const headerCell =
         document.createElement(
           "th"
@@ -308,19 +246,19 @@ function createDayHeader() {
   return headerRow;
 }
 
-function createTaskItem(
+function createTaskButton(
   task,
   onTaskClick
 ) {
-  const taskItem =
+  const button =
     document.createElement(
       "button"
     );
 
-  taskItem.type = "button";
+  button.type = "button";
 
-  taskItem.classList.add(
-    "calendar-task"
+  button.classList.add(
+    "calendar-task-btn"
   );
 
   const statusClass =
@@ -329,7 +267,7 @@ function createTaskItem(
     );
 
   if (statusClass) {
-    taskItem.classList.add(
+    button.classList.add(
       statusClass
     );
   }
@@ -337,24 +275,21 @@ function createTaskItem(
   if (
     isTaskExpired(task)
   ) {
-    taskItem.classList.add(
+    button.classList.add(
       "expired"
     );
   }
 
-  taskItem.textContent =
+  button.textContent =
     task.title || "無題";
 
-  taskItem.title =
-    (task.title || "無題") +
-    "\n担当者：" +
-    getTaskAssignee(task) +
-    "\n期間：" +
-    task.createdAt +
-    " ～ " +
-    task.deadline;
+  button.title =
+    `${task.title || "無題"}\n` +
+    `担当者：${getTaskAssignee(task)}\n` +
+    `開始日：${task.createdAt}\n` +
+    `締切日：${task.deadline}`;
 
-  taskItem.addEventListener(
+  button.addEventListener(
     "click",
     function (event) {
       event.stopPropagation();
@@ -366,7 +301,7 @@ function createTaskItem(
     }
   );
 
-  return taskItem;
+  return button;
 }
 
 function createCalendarCell(
@@ -417,13 +352,10 @@ function createCalendarCell(
     );
   }
 
-  const today =
-    new Date();
-
   if (
     isSameDate(
       date,
-      today
+      new Date()
     )
   ) {
     cell.classList.add(
@@ -437,7 +369,7 @@ function createCalendarCell(
     );
 
   dayNumber.classList.add(
-    "calendar-day-number"
+    "date-number"
   );
 
   dayNumber.textContent =
@@ -461,7 +393,7 @@ function createCalendarCell(
   const dateTasks =
     tasks.filter(
       function (task) {
-        return isTaskOnDate(
+        return isTaskDeadlineDate(
           task,
           date
         );
@@ -470,14 +402,11 @@ function createCalendarCell(
 
   dateTasks.forEach(
     function (task) {
-      const taskItem =
-        createTaskItem(
+      taskArea.appendChild(
+        createTaskButton(
           task,
           onTaskClick
-        );
-
-      taskArea.appendChild(
-        taskItem
+        )
       );
     }
   );
@@ -503,19 +432,23 @@ function createCalendarCell(
   return cell;
 }
 
-function normalizeRenderOptions(
+function normalizeOptions(
   firstArgument,
   secondArgument,
   thirdArgument
 ) {
   if (
     firstArgument &&
-    typeof firstArgument === "object" &&
+    typeof firstArgument ===
+      "object" &&
     !(firstArgument instanceof Date) &&
     (
-      "currentDate" in firstArgument ||
-      "filteredTasks" in firstArgument ||
-      "tasks" in firstArgument
+      "currentDate" in
+        firstArgument ||
+      "filteredTasks" in
+        firstArgument ||
+      "tasks" in
+        firstArgument
     )
   ) {
     return {
@@ -537,7 +470,8 @@ function normalizeRenderOptions(
 
   const callbacks =
     thirdArgument &&
-    typeof thirdArgument === "object"
+    typeof thirdArgument ===
+      "object"
       ? thirdArgument
       : {};
 
@@ -563,28 +497,27 @@ export function renderCalendar(
 ) {
   if (!calendarTableArea) {
     console.error(
-      "カレンダー表示エリアが見つかりません"
+      "calendarTableAreaが見つかりません"
     );
 
     return;
   }
 
   const options =
-    normalizeRenderOptions(
+    normalizeOptions(
       firstArgument,
       secondArgument,
       thirdArgument
     );
 
   const currentDate =
-    createSafeDate(
+    createDate(
       options.currentDate
     );
 
   if (!currentDate) {
     console.error(
-      "カレンダーの表示月が不正です",
-      options.currentDate
+      "カレンダーの表示月が不正です"
     );
 
     return;
@@ -595,24 +528,14 @@ export function renderCalendar(
       options.filteredTasks
     )
       ? options.filteredTasks.filter(
-          function (task) {
-            return (
-              task &&
-              hasValidTaskPeriod(task)
-            );
-          }
+          hasValidTaskDate
         )
       : [];
 
   if (monthTitle) {
     monthTitle.textContent =
-      currentDate.getFullYear() +
-      "年" +
-      (
-        currentDate.getMonth() +
-        1
-      ) +
-      "月";
+      `${currentDate.getFullYear()}年` +
+      `${currentDate.getMonth() + 1}月`;
   }
 
   calendarTableArea.innerHTML =
@@ -652,8 +575,7 @@ export function renderCalendar(
 
   for (
     let weekIndex = 0;
-    weekIndex <
-    CALENDAR_WEEK_COUNT;
+    weekIndex < WEEK_COUNT;
     weekIndex++
   ) {
     const row =
@@ -663,8 +585,7 @@ export function renderCalendar(
 
     for (
       let dayIndex = 0;
-      dayIndex <
-      DAYS_PER_WEEK;
+      dayIndex < DAYS_PER_WEEK;
       dayIndex++
     ) {
       const dateOffset =
@@ -679,7 +600,7 @@ export function renderCalendar(
 
       cellDate.setDate(
         calendarStartDate.getDate() +
-          dateOffset
+        dateOffset
       );
 
       const cell =

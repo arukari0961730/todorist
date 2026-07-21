@@ -43,20 +43,14 @@ import {
 let isApplicationInitialized =
   false;
 
-function isValidDate(
-  date
-) {
+function isValidDate(date) {
   return (
     date instanceof Date &&
-    !Number.isNaN(
-      date.getTime()
-    )
+    !Number.isNaN(date.getTime())
   );
 }
 
-function createMonthDate(
-  date
-) {
+function createMonthDate(date) {
   if (!isValidDate(date)) {
     const today =
       new Date();
@@ -75,31 +69,11 @@ function createMonthDate(
   );
 }
 
-function safelyRun(
-  callback,
-  errorMessage
-) {
-  try {
-    callback();
-  } catch (error) {
-    console.error(
-      errorMessage,
-      error
-    );
-  }
-}
-
-function handleTaskClick(
-  task
-) {
+function handleTaskClick(task) {
   if (
     !task ||
     typeof task !== "object"
   ) {
-    console.error(
-      "表示するタスクが不正です"
-    );
-
     return;
   }
 
@@ -120,6 +94,8 @@ function handleTaskClick(
           setCurrentDate(
             createMonthDate(date)
           );
+
+          renderCurrentView();
         }
     }
   );
@@ -129,27 +105,23 @@ function handleTaskDataChange() {
   renderCurrentView();
 }
 
-function handleCalendarDateClick(
-  date
-) {
+function handleCalendarDateClick(date) {
   if (!isValidDate(date)) {
     return;
   }
 
-  const selectedDate =
-    createMonthDate(date);
-
   setCurrentDate(
-    selectedDate
+    createMonthDate(date)
   );
 }
 
-function handleViewChange(
-  viewName
-) {
-  setCurrentView(
-    viewName
-  );
+function handleViewChange(viewName) {
+  const changed =
+    setCurrentView(viewName);
+
+  if (!changed) {
+    return;
+  }
 
   renderCurrentView();
 }
@@ -179,9 +151,7 @@ function handleFilterChange(
     !changedSettings ||
     typeof changedSettings !==
       "object" ||
-    Array.isArray(
-      changedSettings
-    )
+    Array.isArray(changedSettings)
   ) {
     return;
   }
@@ -198,30 +168,32 @@ function handleDashboardFilter(
     !changedSettings ||
     typeof changedSettings !==
       "object" ||
-    Array.isArray(
-      changedSettings
-    )
+    Array.isArray(changedSettings)
   ) {
     return;
   }
-
-  const currentSettings =
-    getFilterSettings();
-
-  const nextSettings = {
-    ...currentSettings,
-    ...changedSettings
-  };
-
-  updateFilterSettings(
-    nextSettings
-  );
 
   setCurrentView(
     "list"
   );
 
-  renderCurrentView();
+  updateFilterSettings({
+    ...getFilterSettings(),
+    ...changedSettings
+  });
+}
+
+function setupApplicationRenderer() {
+  setupViewRenderer({
+    onTaskClick:
+      handleTaskClick,
+
+    onTaskChange:
+      handleTaskDataChange,
+
+    onDateClick:
+      handleCalendarDateClick
+  });
 }
 
 function setupApplicationNavigation() {
@@ -274,38 +246,27 @@ function setupApplicationModal() {
   setupModalOverlay();
 }
 
-function setupApplicationRenderer() {
-  setupViewRenderer({
-    onTaskClick:
-      handleTaskClick,
-
-    onTaskChange:
-      handleTaskDataChange,
-
-    onDateClick:
-      handleCalendarDateClick
-  });
-}
-
 function validateApplicationState() {
-  const currentView =
-    getCurrentView();
+  const allowedViews = [
+    "calendar",
+    "list",
+    "gantt",
+    "board"
+  ];
 
   if (
-    typeof currentView !==
-    "string"
+    !allowedViews.includes(
+      getCurrentView()
+    )
   ) {
     setCurrentView(
-      "dashboard"
+      "calendar"
     );
   }
 
-  const currentDate =
-    getCurrentDate();
-
   if (
     !isValidDate(
-      currentDate
+      getCurrentDate()
     )
   ) {
     resetCurrentDate();
@@ -313,68 +274,36 @@ function validateApplicationState() {
 }
 
 function initializeApplication() {
-  if (
-    isApplicationInitialized
-  ) {
+  if (isApplicationInitialized) {
     return;
   }
 
   isApplicationInitialized =
     true;
 
-  safelyRun(
-    function () {
-      loadTasks();
-    },
-    "タスクデータの読み込みに失敗しました"
-  );
+  /*
+    data.jsの末尾でもloadTasksが実行されているが、
+    配列は置換されるだけなので重複追加にはならない。
+  */
+  loadTasks();
 
-  safelyRun(
-    validateApplicationState,
-    "アプリの状態確認に失敗しました"
-  );
+  validateApplicationState();
 
-  safelyRun(
-    setupApplicationRenderer,
-    "画面描画処理の初期化に失敗しました"
-  );
+  setupApplicationRenderer();
+  setupApplicationNavigation();
+  setupApplicationFilters();
+  setupApplicationDashboard();
+  setupApplicationForm();
+  setupApplicationModal();
 
-  safelyRun(
-    setupApplicationNavigation,
-    "ナビゲーションの初期化に失敗しました"
-  );
-
-  safelyRun(
-    setupApplicationFilters,
-    "フィルターの初期化に失敗しました"
-  );
-
-  safelyRun(
-    setupApplicationDashboard,
-    "ダッシュボードの初期化に失敗しました"
-  );
-
-  safelyRun(
-    setupApplicationForm,
-    "タスク追加フォームの初期化に失敗しました"
-  );
-
-  safelyRun(
-    setupApplicationModal,
-    "モーダルの初期化に失敗しました"
-  );
-
-  safelyRun(
-    renderCurrentView,
-    "初期画面の表示に失敗しました"
-  );
+  renderCurrentView();
 
   console.log(
     "タスク管理アプリを起動しました"
   );
 
   console.log(
-    "読み込まれたタスク数：",
+    "読み込まれたタスク数:",
     tasks.length
   );
 }

@@ -1,61 +1,31 @@
+const ALLOWED_VIEWS = [
+  "calendar",
+  "list",
+  "gantt",
+  "board"
+];
+
 const appState = {
-  viewDate: new Date(
+  currentView: "calendar",
+
+  currentDate: new Date(
     new Date().getFullYear(),
     new Date().getMonth(),
     1
-  ),
-
-  currentView: "calendar",
-
-  filters: {
-    searchKeyword: "",
-    status: "all",
-    assignee: "all",
-    deadline: "all",
-    sort: "deadline"
-  }
+  )
 };
 
-export function getViewDate() {
-  return new Date(appState.viewDate);
-}
-
-export function setViewDate(newDate) {
-  if (!(newDate instanceof Date)) {
-    return;
-  }
-
-  if (Number.isNaN(newDate.getTime())) {
-    return;
-  }
-
-  appState.viewDate = new Date(
-    newDate.getFullYear(),
-    newDate.getMonth(),
-    1
+function isValidDate(date) {
+  return (
+    date instanceof Date &&
+    !Number.isNaN(date.getTime())
   );
 }
 
-export function moveViewMonth(amount) {
-  const currentYear =
-    appState.viewDate.getFullYear();
-
-  const currentMonth =
-    appState.viewDate.getMonth();
-
-  appState.viewDate = new Date(
-    currentYear,
-    currentMonth + amount,
-    1
-  );
-}
-
-export function resetViewDateToToday() {
-  const today = new Date();
-
-  appState.viewDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
+function createMonthDate(date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
     1
   );
 }
@@ -65,90 +35,78 @@ export function getCurrentView() {
 }
 
 export function setCurrentView(viewName) {
-  const allowedViews = [
-    "calendar",
-    "list",
-    "gantt",
-    "board"
-  ];
+  if (!ALLOWED_VIEWS.includes(viewName)) {
+    console.error(
+      "存在しない画面です:",
+      viewName
+    );
 
-  if (!allowedViews.includes(viewName)) {
-    return;
+    return false;
   }
 
   appState.currentView = viewName;
+
+  return true;
 }
 
-export function getFilterState() {
-  return {
-    searchKeyword:
-      appState.filters.searchKeyword,
-
-    status:
-      appState.filters.status,
-
-    assignee:
-      appState.filters.assignee,
-
-    deadline:
-      appState.filters.deadline,
-
-    sort:
-      appState.filters.sort
-  };
+export function getCurrentDate() {
+  return new Date(
+    appState.currentDate
+  );
 }
 
-export function updateFilterState(
-  filterSettings
-) {
-  if (!filterSettings) {
+export function setCurrentDate(date) {
+  if (!isValidDate(date)) {
+    console.error(
+      "表示月に設定する日付が不正です:",
+      date
+    );
+
+    return false;
+  }
+
+  appState.currentDate =
+    createMonthDate(date);
+
+  return true;
+}
+
+export function moveCurrentMonth(amount) {
+  if (!Number.isInteger(amount)) {
     return;
   }
 
-  if (
-    filterSettings.searchKeyword !==
-    undefined
-  ) {
-    appState.filters.searchKeyword =
-      filterSettings.searchKeyword;
-  }
-
-  if (
-    filterSettings.status !==
-    undefined
-  ) {
-    appState.filters.status =
-      filterSettings.status;
-  }
-
-  if (
-    filterSettings.assignee !==
-    undefined
-  ) {
-    appState.filters.assignee =
-      filterSettings.assignee;
-  }
-
-  if (
-    filterSettings.deadline !==
-    undefined
-  ) {
-    appState.filters.deadline =
-      filterSettings.deadline;
-  }
-
-  if (
-    filterSettings.sort !==
-    undefined
-  ) {
-    appState.filters.sort =
-      filterSettings.sort;
-  }
+  appState.currentDate = new Date(
+    appState.currentDate.getFullYear(),
+    appState.currentDate.getMonth() + amount,
+    1
+  );
 }
 
-export function setAssigneeFilter(
-  assignee
-) {
-  appState.filters.assignee =
-    assignee;
+export function resetCurrentDate() {
+  const today = new Date();
+
+  appState.currentDate =
+    createMonthDate(today);
+}
+
+/*
+  以前の関数名を使っているファイルがあっても
+  動かせるように残している互換用関数
+*/
+
+export function getViewDate() {
+  return getCurrentDate();
+}
+
+export function setViewDate(date) {
+  return setCurrentDate(date);
+}
+
+export function moveViewMonth(amount) {
+  moveCurrentMonth(amount);
+}
+
+export function resetViewDateToToday() {
+  resetCurrentDate();
 }

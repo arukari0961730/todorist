@@ -36,55 +36,16 @@ import {
   setFilterControlValues
 } from "./filterControls.js";
 
-const dashboardView =
-  document.getElementById(
-    "dashboardView"
-  );
-
-const calendarView =
-  document.getElementById(
-    "calendarView"
-  );
-
-const listView =
-  document.getElementById(
-    "listView"
-  );
-
-const boardView =
-  document.getElementById(
-    "boardView"
-  );
-
-const ganttView =
-  document.getElementById(
-    "ganttView"
-  );
-
-const filterArea =
-  document.getElementById(
-    "filterArea"
-  );
-
-const monthNavigationArea =
-  document.getElementById(
-    "monthNavigationArea"
-  );
-
-const viewElements = {
-  dashboard: dashboardView,
-  calendar: calendarView,
-  list: listView,
-  board: boardView,
-  gantt: ganttView
-};
+import {
+  showView
+} from "./navigation.js";
 
 const DEFAULT_FILTER_SETTINGS = {
   searchKeyword: "",
   status: "all",
   assignee: "all",
   deadline: "all",
-  sort: "deadlineAsc"
+  sort: "deadline"
 };
 
 let filterSettings = {
@@ -111,9 +72,7 @@ function runCallback(
   callback(...args);
 }
 
-function isPlainObject(
-  value
-) {
+function isPlainObject(value) {
   return (
     value !== null &&
     typeof value === "object" &&
@@ -121,38 +80,31 @@ function isPlainObject(
   );
 }
 
-function isValidView(
-  viewName
-) {
-  return (
-    typeof viewName === "string" &&
-    Object.prototype.hasOwnProperty.call(
-      viewElements,
-      viewName
-    )
-  );
-}
-
 function getSafeCurrentView() {
   const currentView =
-    typeof getCurrentView ===
-    "function"
-      ? getCurrentView()
-      : "dashboard";
+    getCurrentView();
 
-  return isValidView(
-    currentView
-  )
-    ? currentView
-    : "dashboard";
+  const allowedViews = [
+    "calendar",
+    "list",
+    "gantt",
+    "board"
+  ];
+
+  if (
+    !allowedViews.includes(
+      currentView
+    )
+  ) {
+    return "calendar";
+  }
+
+  return currentView;
 }
 
 function getSafeCurrentDate() {
   const currentDate =
-    typeof getCurrentDate ===
-    "function"
-      ? getCurrentDate()
-      : new Date();
+    getCurrentDate();
 
   if (
     !(currentDate instanceof Date) ||
@@ -160,9 +112,12 @@ function getSafeCurrentDate() {
       currentDate.getTime()
     )
   ) {
+    const today =
+      new Date();
+
     return new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
+      today.getFullYear(),
+      today.getMonth(),
       1
     );
   }
@@ -175,9 +130,9 @@ function getSafeCurrentDate() {
 }
 
 function normalizeFilterSettings(
-  settings = {}
+  newSettings = {}
 ) {
-  if (!isPlainObject(settings)) {
+  if (!isPlainObject(newSettings)) {
     return {
       ...filterSettings
     };
@@ -185,132 +140,82 @@ function normalizeFilterSettings(
 
   return {
     searchKeyword:
-      typeof settings.searchKeyword ===
+      typeof newSettings.searchKeyword ===
       "string"
-        ? settings.searchKeyword
+        ? newSettings.searchKeyword
         : filterSettings.searchKeyword,
 
     status:
-      typeof settings.status ===
+      typeof newSettings.status ===
       "string"
-        ? settings.status
+        ? newSettings.status
         : filterSettings.status,
 
     assignee:
-      typeof settings.assignee ===
+      typeof newSettings.assignee ===
       "string"
-        ? settings.assignee
+        ? newSettings.assignee
         : filterSettings.assignee,
 
     deadline:
-      typeof settings.deadline ===
+      typeof newSettings.deadline ===
       "string"
-        ? settings.deadline
+        ? newSettings.deadline
         : filterSettings.deadline,
 
     sort:
-      typeof settings.sort ===
+      typeof newSettings.sort ===
       "string"
-        ? settings.sort
+        ? newSettings.sort
         : filterSettings.sort
   };
 }
 
-function hideElement(
-  element
-) {
-  if (!element) {
-    return;
-  }
+/*
+  HTMLのselectで使っている値と
+  filters.jsが受け取る並び替え名を変換する
+*/
+function convertSortType(sortType) {
+  const sortMap = {
+    deadline: "deadlineAsc",
+    startDate: "startDateAsc",
+    title: "titleAsc",
+    assignee: "assigneeAsc",
+    status: "statusAsc"
+  };
 
-  element.classList.add(
-    "hidden"
+  return (
+    sortMap[sortType] ||
+    sortType ||
+    "deadlineAsc"
   );
 }
 
-function showElement(
-  element
-) {
-  if (!element) {
-    return;
-  }
+function createFilterSettingsForSearch() {
+  return {
+    searchKeyword:
+      filterSettings.searchKeyword,
 
-  element.classList.remove(
-    "hidden"
-  );
+    status:
+      filterSettings.status,
+
+    assignee:
+      filterSettings.assignee,
+
+    deadline:
+      filterSettings.deadline,
+
+    sort:
+      convertSortType(
+        filterSettings.sort
+      )
+  };
 }
 
-function hideAllViews() {
-  Object.values(
-    viewElements
-  ).forEach(
-    function (element) {
-      hideElement(
-        element
-      );
-    }
-  );
-}
-
-function showCurrentView(
-  currentView
-) {
-  hideAllViews();
-
-  const targetView =
-    viewElements[
-      currentView
-    ];
-
-  if (!targetView) {
-    showElement(
-      dashboardView
-    );
-
-    return;
-  }
-
-  showElement(
-    targetView
-  );
-}
-
-function updateControlVisibility(
-  currentView
-) {
-  if (
-    currentView ===
-    "dashboard"
-  ) {
-    hideElement(
-      filterArea
-    );
-  } else {
-    showElement(
-      filterArea
-    );
-  }
-
-  if (
-    currentView ===
-      "calendar" ||
-    currentView ===
-      "gantt"
-  ) {
-    showElement(
-      monthNavigationArea
-    );
-  } else {
-    hideElement(
-      monthNavigationArea
-    );
-  }
-}
-
-function getFilteredTaskArray() {
+function getFilteredTasks() {
   return filterTasks(
     tasks,
-    filterSettings
+    createFilterSettingsForSearch()
   );
 }
 
@@ -321,19 +226,8 @@ function updateAssigneeOptions() {
       filterSettings.assignee
     );
 
-  if (
-    typeof selectedAssignee ===
-    "string"
-  ) {
-    filterSettings.assignee =
-      selectedAssignee;
-  }
-}
-
-function renderDashboardView() {
-  renderDashboard(
-    tasks
-  );
+  filterSettings.assignee =
+    selectedAssignee;
 }
 
 function renderCalendarView(
@@ -362,7 +256,7 @@ function renderCalendarView(
   });
 }
 
-function renderListView(
+function renderTaskListView(
   filteredTasks
 ) {
   renderTaskList({
@@ -394,6 +288,8 @@ function renderBoardView(
 
     onTaskChange:
       function () {
+        renderCurrentView();
+
         runCallback(
           rendererCallbacks.onTaskChange
         );
@@ -420,13 +316,11 @@ function renderGanttView(
 }
 
 function renderSelectedView(
-  currentView,
+  viewName,
   filteredTasks,
   currentDate
 ) {
-  switch (
-    currentView
-  ) {
+  switch (viewName) {
     case "calendar":
       renderCalendarView(
         filteredTasks,
@@ -435,13 +329,7 @@ function renderSelectedView(
       break;
 
     case "list":
-      renderListView(
-        filteredTasks
-      );
-      break;
-
-    case "board":
-      renderBoardView(
+      renderTaskListView(
         filteredTasks
       );
       break;
@@ -453,9 +341,17 @@ function renderSelectedView(
       );
       break;
 
-    case "dashboard":
+    case "board":
+      renderBoardView(
+        filteredTasks
+      );
+      break;
+
     default:
-      renderDashboardView();
+      renderCalendarView(
+        filteredTasks,
+        currentDate
+      );
       break;
   }
 }
@@ -463,9 +359,7 @@ function renderSelectedView(
 export function setupViewRenderer(
   callbacks = {}
 ) {
-  if (
-    !isPlainObject(callbacks)
-  ) {
+  if (!isPlainObject(callbacks)) {
     return;
   }
 
@@ -494,8 +388,15 @@ export function setupViewRenderer(
   }
 }
 
+export function getFilterSettings() {
+  return {
+    ...filterSettings
+  };
+}
+
 export function updateFilterSettings(
-  newSettings = {}
+  newSettings = {},
+  shouldRender = true
 ) {
   filterSettings =
     normalizeFilterSettings(
@@ -506,7 +407,9 @@ export function updateFilterSettings(
     filterSettings
   );
 
-  renderCurrentView();
+  if (shouldRender) {
+    renderCurrentView();
+  }
 }
 
 export function setFilterSettings(
@@ -526,15 +429,7 @@ export function resetFilterSettings() {
     filterSettings
   );
 
-  updateAssigneeOptions();
-
   renderCurrentView();
-}
-
-export function getFilterSettings() {
-  return {
-    ...filterSettings
-  };
 }
 
 export function renderCurrentView() {
@@ -551,17 +446,15 @@ export function renderCurrentView() {
   );
 
   const filteredTasks =
-    getFilteredTaskArray();
+    getFilteredTasks();
 
-  showCurrentView(
-    currentView
+  renderDashboard(
+    tasks
   );
 
-  updateControlVisibility(
+  showView(
     currentView
   );
-
-  renderDashboardView();
 
   renderSelectedView(
     currentView,
@@ -581,20 +474,18 @@ export function renderAllViews() {
   );
 
   const filteredTasks =
-    getFilteredTaskArray();
+    getFilteredTasks();
 
-  renderDashboardView();
+  renderDashboard(
+    tasks
+  );
 
   renderCalendarView(
     filteredTasks,
     currentDate
   );
 
-  renderListView(
-    filteredTasks
-  );
-
-  renderBoardView(
+  renderTaskListView(
     filteredTasks
   );
 
@@ -603,24 +494,11 @@ export function renderAllViews() {
     currentDate
   );
 
-  const currentView =
-    getSafeCurrentView();
-
-  showCurrentView(
-    currentView
+  renderBoardView(
+    filteredTasks
   );
 
-  updateControlVisibility(
-    currentView
-  );
-}
-
-export function handleTaskDataChange() {
-  updateAssigneeOptions();
-
-  renderCurrentView();
-
-  runCallback(
-    rendererCallbacks.onTaskChange
+  showView(
+    getSafeCurrentView()
   );
 }

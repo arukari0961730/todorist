@@ -4,35 +4,27 @@ import {
   isTaskExpired
 } from "./filters.js";
 
-const ganttArea =
+const ganttChartArea =
   document.getElementById(
-    "ganttArea"
-  );
-
-const ganttTitle =
-  document.getElementById(
-    "ganttTitle"
+    "ganttChartArea"
   );
 
 const DAY_WIDTH = 42;
+const TASK_COLUMN_WIDTH = 180;
 
 function runCallback(
   callback,
   ...args
 ) {
   if (
-    typeof callback !==
+    typeof callback ===
     "function"
   ) {
-    return;
+    callback(...args);
   }
-
-  callback(...args);
 }
 
-function isValidDate(
-  date
-) {
+function isValidDate(date) {
   return (
     date instanceof Date &&
     !Number.isNaN(
@@ -41,9 +33,7 @@ function isValidDate(
   );
 }
 
-function createSafeDate(
-  value
-) {
+function createDate(value) {
   if (
     value instanceof Date
   ) {
@@ -112,77 +102,6 @@ function createSafeDate(
   return date;
 }
 
-function normalizeDate(
-  date
-) {
-  if (!isValidDate(date)) {
-    return null;
-  }
-
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-}
-
-function addDays(
-  date,
-  days
-) {
-  const result =
-    normalizeDate(date);
-
-  if (!result) {
-    return null;
-  }
-
-  result.setDate(
-    result.getDate() + days
-  );
-
-  return result;
-}
-
-function getDaysBetween(
-  startDate,
-  endDate
-) {
-  if (
-    !isValidDate(startDate) ||
-    !isValidDate(endDate)
-  ) {
-    return 0;
-  }
-
-  const startTime =
-    Date.UTC(
-      startDate.getFullYear(),
-      startDate.getMonth(),
-      startDate.getDate()
-    );
-
-  const endTime =
-    Date.UTC(
-      endDate.getFullYear(),
-      endDate.getMonth(),
-      endDate.getDate()
-    );
-
-  return Math.floor(
-    (
-      endTime -
-      startTime
-    ) /
-    (
-      1000 *
-      60 *
-      60 *
-      24
-    )
-  );
-}
-
 function getMonthStartDate(
   currentDate
 ) {
@@ -211,6 +130,52 @@ function getDaysInMonth(
   ).getDate();
 }
 
+function getDaysBetween(
+  startDate,
+  endDate
+) {
+  const startTime =
+    Date.UTC(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+  const endTime =
+    Date.UTC(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate()
+    );
+
+  return Math.floor(
+    (
+      endTime -
+      startTime
+    ) /
+    (
+      1000 *
+      60 *
+      60 *
+      24
+    )
+  );
+}
+
+function isSameDate(
+  dateA,
+  dateB
+) {
+  return (
+    dateA.getFullYear() ===
+      dateB.getFullYear() &&
+    dateA.getMonth() ===
+      dateB.getMonth() &&
+    dateA.getDate() ===
+      dateB.getDate()
+  );
+}
+
 function hasValidTaskPeriod(
   task
 ) {
@@ -223,12 +188,12 @@ function hasValidTaskPeriod(
   }
 
   const startDate =
-    createSafeDate(
+    createDate(
       task.createdAt
     );
 
   const deadline =
-    createSafeDate(
+    createDate(
       task.deadline
     );
 
@@ -245,10 +210,10 @@ function hasValidTaskPeriod(
   );
 }
 
-function isTaskInDisplayPeriod(
+function isTaskInMonth(
   task,
-  displayStart,
-  displayEnd
+  monthStart,
+  monthEnd
 ) {
   if (
     !hasValidTaskPeriod(task)
@@ -257,35 +222,35 @@ function isTaskInDisplayPeriod(
   }
 
   const taskStart =
-    createSafeDate(
+    createDate(
       task.createdAt
     );
 
   const taskEnd =
-    createSafeDate(
+    createDate(
       task.deadline
     );
 
   return (
     taskEnd.getTime() >=
-      displayStart.getTime() &&
+      monthStart.getTime() &&
     taskStart.getTime() <=
-      displayEnd.getTime()
+      monthEnd.getTime()
   );
 }
 
 function getVisibleTaskPeriod(
   task,
-  displayStart,
-  displayEnd
+  monthStart,
+  monthEnd
 ) {
   const taskStart =
-    createSafeDate(
+    createDate(
       task.createdAt
     );
 
   const taskEnd =
-    createSafeDate(
+    createDate(
       task.deadline
     );
 
@@ -297,16 +262,20 @@ function getVisibleTaskPeriod(
   }
 
   const visibleStart =
-    taskStart.getTime() <
-    displayStart.getTime()
-      ? displayStart
+    taskStart < monthStart
+      ? monthStart
       : taskStart;
 
   const visibleEnd =
-    taskEnd.getTime() >
-    displayEnd.getTime()
-      ? displayEnd
+    taskEnd > monthEnd
+      ? monthEnd
       : taskEnd;
+
+  if (
+    visibleStart > visibleEnd
+  ) {
+    return null;
+  }
 
   return {
     startDate:
@@ -317,9 +286,7 @@ function getVisibleTaskPeriod(
   };
 }
 
-function createEmptyMessage(
-  text
-) {
+function createEmptyMessage() {
   const message =
     document.createElement(
       "p"
@@ -330,9 +297,55 @@ function createEmptyMessage(
   );
 
   message.textContent =
-    text;
+    "この月に該当するタスクはありません";
 
   return message;
+}
+
+function createDayCell(
+  date,
+  className
+) {
+  const cell =
+    document.createElement(
+      "div"
+    );
+
+  cell.classList.add(
+    className
+  );
+
+  cell.style.width =
+    `${DAY_WIDTH}px`;
+
+  if (
+    date.getDay() === 0
+  ) {
+    cell.classList.add(
+      "sunday"
+    );
+  }
+
+  if (
+    date.getDay() === 6
+  ) {
+    cell.classList.add(
+      "saturday"
+    );
+  }
+
+  if (
+    isSameDate(
+      date,
+      new Date()
+    )
+  ) {
+    cell.classList.add(
+      "gantt-today"
+    );
+  }
+
+  return cell;
 }
 
 function createGanttHeader(
@@ -344,7 +357,7 @@ function createGanttHeader(
     );
 
   header.classList.add(
-    "gantt-header"
+    "gantt-header-row"
   );
 
   const taskHeader =
@@ -355,6 +368,9 @@ function createGanttHeader(
   taskHeader.classList.add(
     "gantt-task-header"
   );
+
+  taskHeader.style.width =
+    `${TASK_COLUMN_WIDTH}px`;
 
   taskHeader.textContent =
     "タスク";
@@ -378,9 +394,10 @@ function createGanttHeader(
     );
 
   timelineHeader.style.width =
-    daysInMonth *
-      DAY_WIDTH +
-    "px";
+    `${
+      daysInMonth *
+      DAY_WIDTH
+    }px`;
 
   for (
     let day = 1;
@@ -395,35 +412,13 @@ function createGanttHeader(
       );
 
     const dayCell =
-      document.createElement(
-        "div"
+      createDayCell(
+        date,
+        "gantt-day-header"
       );
-
-    dayCell.classList.add(
-      "gantt-day-header"
-    );
-
-    dayCell.style.width =
-      DAY_WIDTH + "px";
 
     dayCell.textContent =
       String(day);
-
-    if (
-      date.getDay() === 0
-    ) {
-      dayCell.classList.add(
-        "sunday"
-      );
-    }
-
-    if (
-      date.getDay() === 6
-    ) {
-      dayCell.classList.add(
-        "saturday"
-      );
-    }
 
     timelineHeader.appendChild(
       dayCell
@@ -455,9 +450,10 @@ function createTimelineBackground(
     );
 
   background.style.width =
-    daysInMonth *
-      DAY_WIDTH +
-    "px";
+    `${
+      daysInMonth *
+      DAY_WIDTH
+    }px`;
 
   for (
     let day = 1;
@@ -472,48 +468,10 @@ function createTimelineBackground(
       );
 
     const cell =
-      document.createElement(
-        "div"
+      createDayCell(
+        date,
+        "gantt-day-cell"
       );
-
-    cell.classList.add(
-      "gantt-day-cell"
-    );
-
-    cell.style.width =
-      DAY_WIDTH + "px";
-
-    if (
-      date.getDay() === 0
-    ) {
-      cell.classList.add(
-        "sunday"
-      );
-    }
-
-    if (
-      date.getDay() === 6
-    ) {
-      cell.classList.add(
-        "saturday"
-      );
-    }
-
-    const today =
-      new Date();
-
-    if (
-      date.getFullYear() ===
-        today.getFullYear() &&
-      date.getMonth() ===
-        today.getMonth() &&
-      date.getDate() ===
-        today.getDate()
-    ) {
-      cell.classList.add(
-        "today"
-      );
-    }
 
     background.appendChild(
       cell
@@ -524,7 +482,8 @@ function createTimelineBackground(
 }
 
 function createTaskInfo(
-  task
+  task,
+  onTaskClick
 ) {
   const taskInfo =
     document.createElement(
@@ -537,6 +496,9 @@ function createTaskInfo(
   taskInfo.classList.add(
     "gantt-task-info"
   );
+
+  taskInfo.style.width =
+    `${TASK_COLUMN_WIDTH}px`;
 
   const title =
     document.createElement(
@@ -560,7 +522,7 @@ function createTaskInfo(
   );
 
   assignee.textContent =
-    getTaskAssignee(task);
+    `担当者：${getTaskAssignee(task)}`;
 
   taskInfo.appendChild(
     title
@@ -570,19 +532,30 @@ function createTaskInfo(
     assignee
   );
 
+  taskInfo.addEventListener(
+    "click",
+    function () {
+      runCallback(
+        onTaskClick,
+        task
+      );
+    }
+  );
+
   return taskInfo;
 }
 
 function createTaskBar(
   task,
-  displayStart,
-  displayEnd
+  monthStart,
+  monthEnd,
+  onTaskClick
 ) {
   const visiblePeriod =
     getVisibleTaskPeriod(
       task,
-      displayStart,
-      displayEnd
+      monthStart,
+      monthEnd
     );
 
   if (!visiblePeriod) {
@@ -591,7 +564,7 @@ function createTaskBar(
 
   const startOffset =
     getDaysBetween(
-      displayStart,
+      monthStart,
       visiblePeriod.startDate
     );
 
@@ -601,17 +574,13 @@ function createTaskBar(
       visiblePeriod.endDate
     ) + 1;
 
-  if (
-    startOffset < 0 ||
-    visibleDays <= 0
-  ) {
-    return null;
-  }
-
   const bar =
     document.createElement(
-      "div"
+      "button"
     );
+
+  bar.type =
+    "button";
 
   bar.classList.add(
     "gantt-task-bar"
@@ -637,63 +606,29 @@ function createTaskBar(
   }
 
   bar.style.left =
-    startOffset *
+    `${
+      startOffset *
       DAY_WIDTH +
-    "px";
+      3
+    }px`;
 
   bar.style.width =
-    visibleDays *
+    `${
+      visibleDays *
       DAY_WIDTH -
-    6 +
-    "px";
+      6
+    }px`;
 
   bar.textContent =
     task.title || "無題";
 
   bar.title =
-    (task.title || "無題") +
-    "\n担当者：" +
-    getTaskAssignee(task) +
-    "\n期間：" +
-    task.createdAt +
-    " ～ " +
-    task.deadline;
+    `${task.title || "無題"}\n` +
+    `担当者：${getTaskAssignee(task)}\n` +
+    `開始日：${task.createdAt}\n` +
+    `締切日：${task.deadline}`;
 
-  return bar;
-}
-
-function createGanttRow(
-  task,
-  currentDate,
-  callbacks
-) {
-  const {
-    onTaskClick
-  } = callbacks;
-
-  const displayStart =
-    getMonthStartDate(
-      currentDate
-    );
-
-  const displayEnd =
-    getMonthEndDate(
-      currentDate
-    );
-
-  const row =
-    document.createElement(
-      "div"
-    );
-
-  row.classList.add(
-    "gantt-row"
-  );
-
-  const taskInfo =
-    createTaskInfo(task);
-
-  taskInfo.addEventListener(
+  bar.addEventListener(
     "click",
     function () {
       runCallback(
@@ -702,6 +637,29 @@ function createGanttRow(
       );
     }
   );
+
+  return bar;
+}
+
+function createGanttRow(
+  task,
+  currentDate,
+  onTaskClick
+) {
+  const row =
+    document.createElement(
+      "div"
+    );
+
+  row.classList.add(
+    "gantt-data-row"
+  );
+
+  const taskInfo =
+    createTaskInfo(
+      task,
+      onTaskClick
+    );
 
   row.appendChild(
     taskInfo
@@ -716,42 +674,44 @@ function createGanttRow(
     "gantt-row-timeline"
   );
 
-  timeline.style.width =
+  const daysInMonth =
     getDaysInMonth(
       currentDate
-    ) *
-      DAY_WIDTH +
-    "px";
+    );
 
-  const background =
+  timeline.style.width =
+    `${
+      daysInMonth *
+      DAY_WIDTH
+    }px`;
+
+  timeline.appendChild(
     createTimelineBackground(
+      currentDate
+    )
+  );
+
+  const monthStart =
+    getMonthStartDate(
       currentDate
     );
 
-  timeline.appendChild(
-    background
-  );
+  const monthEnd =
+    getMonthEndDate(
+      currentDate
+    );
 
-  const bar =
+  const taskBar =
     createTaskBar(
       task,
-      displayStart,
-      displayEnd
+      monthStart,
+      monthEnd,
+      onTaskClick
     );
 
-  if (bar) {
-    bar.addEventListener(
-      "click",
-      function () {
-        runCallback(
-          onTaskClick,
-          task
-        );
-      }
-    );
-
+  if (taskBar) {
     timeline.appendChild(
-      bar
+      taskBar
     );
   }
 
@@ -762,7 +722,7 @@ function createGanttRow(
   return row;
 }
 
-function normalizeRenderOptions(
+function normalizeOptions(
   firstArgument,
   secondArgument,
   thirdArgument
@@ -814,41 +774,40 @@ export function renderGantt(
   secondArgument,
   thirdArgument
 ) {
-  if (!ganttArea) {
+  if (!ganttChartArea) {
     console.error(
-      "ガントチャート表示エリアが見つかりません"
+      "ganttChartAreaが見つかりません"
     );
 
     return;
   }
 
   const options =
-    normalizeRenderOptions(
+    normalizeOptions(
       firstArgument,
       secondArgument,
       thirdArgument
     );
 
   const currentDate =
-    createSafeDate(
+    createDate(
       options.currentDate
     );
 
   if (!currentDate) {
     console.error(
-      "ガントチャートの表示月が不正です",
-      options.currentDate
+      "ガントチャートの表示月が不正です"
     );
 
     return;
   }
 
-  const displayStart =
+  const monthStart =
     getMonthStartDate(
       currentDate
     );
 
-  const displayEnd =
+  const monthEnd =
     getMonthEndDate(
       currentDate
     );
@@ -859,41 +818,23 @@ export function renderGantt(
     )
       ? options.filteredTasks.filter(
           function (task) {
-            return (
-              hasValidTaskPeriod(
-                task
-              ) &&
-              isTaskInDisplayPeriod(
-                task,
-                displayStart,
-                displayEnd
-              )
+            return isTaskInMonth(
+              task,
+              monthStart,
+              monthEnd
             );
           }
         )
       : [];
 
-  if (ganttTitle) {
-    ganttTitle.textContent =
-      currentDate.getFullYear() +
-      "年" +
-      (
-        currentDate.getMonth() +
-        1
-      ) +
-      "月";
-  }
-
-  ganttArea.innerHTML =
+  ganttChartArea.innerHTML =
     "";
 
   if (
     safeTasks.length === 0
   ) {
-    ganttArea.appendChild(
-      createEmptyMessage(
-        "この月に該当するタスクがありません"
-      )
+    ganttChartArea.appendChild(
+      createEmptyMessage()
     );
 
     return;
@@ -905,37 +846,53 @@ export function renderGantt(
     );
 
   wrapper.classList.add(
-    "gantt-wrapper"
+    "gantt-scroll-area"
   );
 
-  const header =
-    createGanttHeader(
+  const chart =
+    document.createElement(
+      "div"
+    );
+
+  chart.classList.add(
+    "gantt-chart"
+  );
+
+  const daysInMonth =
+    getDaysInMonth(
       currentDate
     );
 
-  wrapper.appendChild(
-    header
+  chart.style.width =
+    `${
+      TASK_COLUMN_WIDTH +
+      daysInMonth *
+        DAY_WIDTH
+    }px`;
+
+  chart.appendChild(
+    createGanttHeader(
+      currentDate
+    )
   );
 
   safeTasks.forEach(
     function (task) {
-      const row =
+      chart.appendChild(
         createGanttRow(
           task,
           currentDate,
-          {
-            onTaskClick:
-              options.onTaskClick
-          }
-        );
-
-      wrapper.appendChild(
-        row
+          options.onTaskClick
+        )
       );
     }
   );
 
-  ganttArea.appendChild(
+  wrapper.appendChild(
+    chart
+  );
+
+  ganttChartArea.appendChild(
     wrapper
   );
 }
