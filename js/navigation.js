@@ -1,144 +1,190 @@
 const prevBtn =
-    document.getElementById("prevBtn");
+  document.getElementById("prevBtn");
 
 const todayBtn =
-    document.getElementById("todayBtn");
+  document.getElementById("todayBtn");
 
 const nextBtn =
-    document.getElementById("nextBtn");
+  document.getElementById("nextBtn");
 
 const calendarTab =
-    document.getElementById("calendarTab");
+  document.getElementById("calendarTab");
 
 const listTab =
-    document.getElementById("listTab");
+  document.getElementById("listTab");
 
 const ganttTab =
-    document.getElementById("ganttTab");
+  document.getElementById("ganttTab");
 
 const boardTab =
-    document.getElementById("boardTab");
+  document.getElementById("boardTab");
 
 const calendarArea =
-    document.getElementById("calendarArea");
+  document.getElementById("calendarArea");
 
 const listArea =
-    document.getElementById("listArea");
+  document.getElementById("listArea");
 
 const ganttArea =
-    document.getElementById("ganttArea");
+  document.getElementById("ganttArea");
 
 const boardArea =
-    document.getElementById("boardArea");
+  document.getElementById("boardArea");
 
 const viewSettings = {
-    calendar: {
-        area: calendarArea,
-        tab: calendarTab
-    },
+  calendar: {
+    area: calendarArea,
+    tab: calendarTab
+  },
 
-    list: {
-        area: listArea,
-        tab: listTab
-    },
+  list: {
+    area: listArea,
+    tab: listTab
+  },
 
-    gantt: {
-        area: ganttArea,
-        tab: ganttTab
-    },
+  gantt: {
+    area: ganttArea,
+    tab: ganttTab
+  },
 
-    board: {
-        area: boardArea,
-        tab: boardTab
-    }
+  board: {
+    area: boardArea,
+    tab: boardTab
+  }
 };
 
+function isValidView(view) {
+  return (
+    view &&
+    view.area &&
+    view.tab
+  );
+}
+
 function hideAllViews() {
-    Object.values(viewSettings).forEach(
-        function (view) {
-            view.area.classList.add("hidden");
-            view.tab.classList.remove("active");
-        }
-    );
+  Object.values(viewSettings).forEach(
+    function (view) {
+      if (!isValidView(view)) {
+        return;
+      }
+
+      view.area.classList.add(
+        "hidden"
+      );
+
+      view.tab.classList.remove(
+        "active"
+      );
+    }
+  );
 }
 
 export function showView(viewName) {
-    const selectedView =
-        viewSettings[viewName];
+  const selectedView =
+    viewSettings[viewName];
 
-    if (!selectedView) {
-        return;
-    }
-
-    hideAllViews();
-
-    selectedView.area.classList.remove(
-        "hidden"
+  if (!isValidView(selectedView)) {
+    console.error(
+      "表示する画面が見つかりません:",
+      viewName
     );
 
-    selectedView.tab.classList.add(
-        "active"
-    );
+    return;
+  }
+
+  hideAllViews();
+
+  selectedView.area.classList.remove(
+    "hidden"
+  );
+
+  selectedView.tab.classList.add(
+    "active"
+  );
 }
 
-export function setupNavigation(callbacks) {
-    const {
-        onPreviousMonth,
-        onToday,
-        onNextMonth,
-        onViewChange
-    } = callbacks;
+function addClickEvent(
+  element,
+  callback
+) {
+  if (!element) {
+    return;
+  }
 
-    prevBtn.addEventListener(
-        "click",
-        function () {
-            onPreviousMonth();
-        }
-    );
+  if (typeof callback !== "function") {
+    return;
+  }
 
-    todayBtn.addEventListener(
-        "click",
-        function () {
-            onToday();
-        }
-    );
+  element.addEventListener(
+    "click",
+    callback
+  );
+}
 
-    nextBtn.addEventListener(
-        "click",
-        function () {
-            onNextMonth();
-        }
-    );
+export function setupNavigation(
+  callbacks = {}
+) {
+  const {
+    onPreviousMonth,
+    onToday,
+    onNextMonth,
+    onViewChange
+  } = callbacks;
 
-    calendarTab.addEventListener(
-        "click",
-        function () {
-            showView("calendar");
-            onViewChange("calendar");
-        }
-    );
+  addClickEvent(
+    prevBtn,
+    function () {
+      onPreviousMonth();
+    }
+  );
 
-    listTab.addEventListener(
-        "click",
-        function () {
-            showView("list");
-            onViewChange("list");
-        }
-    );
+  addClickEvent(
+    todayBtn,
+    function () {
+      onToday();
+    }
+  );
 
-    ganttTab.addEventListener(
-        "click",
-        function () {
-            showView("gantt");
-            onViewChange("gantt");
-        }
-    );
+  addClickEvent(
+    nextBtn,
+    function () {
+      onNextMonth();
+    }
+  );
 
-    boardTab.addEventListener(
-        "click",
-        function () {
-            showView("board");
-            onViewChange("board");
-        }
-    );
+  addClickEvent(
+    calendarTab,
+    function () {
+      showView("calendar");
+
+      onViewChange("calendar");
+    }
+  );
+
+  addClickEvent(
+    listTab,
+    function () {
+      showView("list");
+
+      onViewChange("list");
+    }
+  );
+
+  addClickEvent(
+    ganttTab,
+    function () {
+      showView("gantt");
+
+      onViewChange("gantt");
+    }
+  );
+
+  addClickEvent(
+    boardTab,
+    function () {
+      showView("board");
+
+      onViewChange("board");
+    }
+  );
 }

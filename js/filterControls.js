@@ -1,146 +1,259 @@
 import {
-    getTaskAssignee
+  getTaskAssignee
 } from "./filters.js";
 
 const searchInput =
-    document.getElementById("searchInput");
+  document.getElementById("searchInput");
 
 const statusFilter =
-    document.getElementById("statusFilter");
+  document.getElementById("statusFilter");
 
 const assigneeFilter =
-    document.getElementById("assigneeFilter");
+  document.getElementById("assigneeFilter");
 
 const deadlineFilter =
-    document.getElementById("deadlineFilter");
+  document.getElementById("deadlineFilter");
 
 const sortFilter =
-    document.getElementById("sortFilter");
+  document.getElementById("sortFilter");
 
-export function setupFilterControls(onFilterChange) {
-    searchInput.addEventListener("input", function () {
-        onFilterChange({
-            searchKeyword: searchInput.value.trim()
-        });
-    });
+let isFilterEventsInitialized = false;
 
-    statusFilter.addEventListener("change", function () {
-        onFilterChange({
-            status: statusFilter.value
-        });
-    });
+function addInputEvent(
+  element,
+  callback
+) {
+  if (!element) {
+    return;
+  }
 
-    assigneeFilter.addEventListener("change", function () {
-        onFilterChange({
-            assignee: assigneeFilter.value
-        });
-    });
+  if (typeof callback !== "function") {
+    return;
+  }
 
-    deadlineFilter.addEventListener("change", function () {
-        onFilterChange({
-            deadline: deadlineFilter.value
-        });
-    });
+  element.addEventListener(
+    "input",
+    callback
+  );
+}
 
-    sortFilter.addEventListener("change", function () {
-        onFilterChange({
-            sort: sortFilter.value
-        });
-    });
+function addChangeEvent(
+  element,
+  callback
+) {
+  if (!element) {
+    return;
+  }
+
+  if (typeof callback !== "function") {
+    return;
+  }
+
+  element.addEventListener(
+    "change",
+    callback
+  );
+}
+
+export function setupFilterControls(
+  onFilterChange
+) {
+  if (isFilterEventsInitialized) {
+    return;
+  }
+
+  if (
+    typeof onFilterChange !==
+    "function"
+  ) {
+    console.error(
+      "フィルター変更処理が設定されていません"
+    );
+
+    return;
+  }
+
+  addInputEvent(
+    searchInput,
+    function () {
+      onFilterChange({
+        searchKeyword:
+          searchInput.value.trim()
+      });
+    }
+  );
+
+  addChangeEvent(
+    statusFilter,
+    function () {
+      onFilterChange({
+        status:
+          statusFilter.value
+      });
+    }
+  );
+
+  addChangeEvent(
+    assigneeFilter,
+    function () {
+      onFilterChange({
+        assignee:
+          assigneeFilter.value
+      });
+    }
+  );
+
+  addChangeEvent(
+    deadlineFilter,
+    function () {
+      onFilterChange({
+        deadline:
+          deadlineFilter.value
+      });
+    }
+  );
+
+  addChangeEvent(
+    sortFilter,
+    function () {
+      onFilterChange({
+        sort:
+          sortFilter.value
+      });
+    }
+  );
+
+  isFilterEventsInitialized = true;
 }
 
 export function renderAssigneeFilterOptions(
-    tasks,
-    selectedAssignee
+  tasks,
+  selectedAssignee
 ) {
-    assigneeFilter.innerHTML = "";
+  if (!assigneeFilter) {
+    return "all";
+  }
 
-    const allOption =
-        document.createElement("option");
+  assigneeFilter.innerHTML = "";
 
-    allOption.value = "all";
-    allOption.textContent = "すべての担当者";
+  const allOption =
+    document.createElement("option");
 
-    assigneeFilter.appendChild(allOption);
+  allOption.value = "all";
+  allOption.textContent =
+    "すべての担当者";
 
-    const assignees = [];
+  assigneeFilter.appendChild(
+    allOption
+  );
 
-    tasks.forEach(function (task) {
-        const assigneeName =
-            getTaskAssignee(task);
-
-        if (!assignees.includes(assigneeName)) {
-            assignees.push(assigneeName);
-        }
-    });
-
-    assignees.sort(function (a, b) {
-        return a.localeCompare(b, "ja");
-    });
-
-    assignees.forEach(function (assigneeName) {
-        const option =
-            document.createElement("option");
-
-        option.value = assigneeName;
-        option.textContent = assigneeName;
-
-        assigneeFilter.appendChild(option);
-    });
-
-    if (
-        selectedAssignee === "all" ||
-        assignees.includes(selectedAssignee)
-    ) {
-        assigneeFilter.value =
-            selectedAssignee;
-
-        return selectedAssignee;
-    }
-
+  if (!Array.isArray(tasks)) {
     assigneeFilter.value = "all";
 
     return "all";
+  }
+
+  const assignees = [];
+
+  tasks.forEach(function (task) {
+    const assigneeName =
+      getTaskAssignee(task);
+
+    if (
+      !assignees.includes(
+        assigneeName
+      )
+    ) {
+      assignees.push(
+        assigneeName
+      );
+    }
+  });
+
+  assignees.sort(function (a, b) {
+    return a.localeCompare(
+      b,
+      "ja"
+    );
+  });
+
+  assignees.forEach(
+    function (assigneeName) {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        assigneeName;
+
+      option.textContent =
+        assigneeName;
+
+      assigneeFilter.appendChild(
+        option
+      );
+    }
+  );
+
+  const canKeepSelection =
+    selectedAssignee === "all" ||
+    assignees.includes(
+      selectedAssignee
+    );
+
+  if (canKeepSelection) {
+    assigneeFilter.value =
+      selectedAssignee;
+
+    return selectedAssignee;
+  }
+
+  assigneeFilter.value = "all";
+
+  return "all";
 }
 
-export function setFilterControlValues(filterSettings) {
-    if (
-        filterSettings.searchKeyword !==
-        undefined
-    ) {
-        searchInput.value =
-            filterSettings.searchKeyword;
-    }
+function setElementValue(
+  element,
+  value
+) {
+  if (!element) {
+    return;
+  }
 
-    if (
-        filterSettings.status !==
-        undefined
-    ) {
-        statusFilter.value =
-            filterSettings.status;
-    }
+  if (value === undefined) {
+    return;
+  }
 
-    if (
-        filterSettings.assignee !==
-        undefined
-    ) {
-        assigneeFilter.value =
-            filterSettings.assignee;
-    }
+  element.value = value;
+}
 
-    if (
-        filterSettings.deadline !==
-        undefined
-    ) {
-        deadlineFilter.value =
-            filterSettings.deadline;
-    }
+export function setFilterControlValues(
+  filterSettings = {}
+) {
+  setElementValue(
+    searchInput,
+    filterSettings.searchKeyword
+  );
 
-    if (
-        filterSettings.sort !==
-        undefined
-    ) {
-        sortFilter.value =
-            filterSettings.sort;
-    }
+  setElementValue(
+    statusFilter,
+    filterSettings.status
+  );
+
+  setElementValue(
+    assigneeFilter,
+    filterSettings.assignee
+  );
+
+  setElementValue(
+    deadlineFilter,
+    filterSettings.deadline
+  );
+
+  setElementValue(
+    sortFilter,
+    filterSettings.sort
+  );
 }

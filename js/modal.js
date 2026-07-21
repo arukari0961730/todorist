@@ -11,245 +11,800 @@ import {
   getTaskAssignee
 } from "./filters.js";
 
-const modalOverlay = document.getElementById("modalOverlay");
-const modalContent = document.getElementById("modalContent");
+const modalOverlay =
+  document.getElementById("modalOverlay");
 
-export function closeModal() {
-  modalOverlay.classList.add("hidden");
+const modalContent =
+  document.getElementById("modalContent");
+
+let isModalOverlayInitialized = false;
+let isProcessingModalAction = false;
+
+function hasModalElements() {
+  return (
+    modalOverlay &&
+    modalContent
+  );
 }
 
-function renderStatusSelect(selectedStatus) {
-  const select = document.createElement("select");
-  select.classList.add("edit-select");
+function setModalVisible(
+  isVisible
+) {
+  if (!modalOverlay) {
+    return;
+  }
 
-  STATUS_LIST.forEach(function (status) {
-    const option = document.createElement("option");
+  if (isVisible) {
+    modalOverlay.classList.remove(
+      "hidden"
+    );
 
-    option.value = status.value;
-    option.textContent = status.label;
+    return;
+  }
 
-    if (status.value === selectedStatus) {
-      option.selected = true;
+  modalOverlay.classList.add(
+    "hidden"
+  );
+}
+
+function clearModalContent() {
+  if (!modalContent) {
+    return;
+  }
+
+  modalContent.innerHTML = "";
+}
+
+function runCallback(
+  callback,
+  ...args
+) {
+  if (
+    typeof callback !==
+    "function"
+  ) {
+    return;
+  }
+
+  callback(...args);
+}
+
+function createButton(
+  text,
+  className,
+  onClick
+) {
+  const button =
+    document.createElement(
+      "button"
+    );
+
+  button.type = "button";
+  button.textContent = text;
+
+  if (className) {
+    button.classList.add(
+      className
+    );
+  }
+
+  if (
+    typeof onClick ===
+    "function"
+  ) {
+    button.addEventListener(
+      "click",
+      onClick
+    );
+  }
+
+  return button;
+}
+
+function setModalButtonsDisabled(
+  disabled
+) {
+  if (!modalContent) {
+    return;
+  }
+
+  const buttons =
+    modalContent.querySelectorAll(
+      "button"
+    );
+
+  buttons.forEach(
+    function (button) {
+      button.disabled =
+        disabled;
     }
+  );
+}
 
-    select.appendChild(option);
-  });
+export function closeModal() {
+  if (isProcessingModalAction) {
+    return;
+  }
+
+  setModalVisible(false);
+  clearModalContent();
+}
+
+function renderStatusSelect(
+  selectedStatus
+) {
+  const select =
+    document.createElement(
+      "select"
+    );
+
+  select.classList.add(
+    "edit-select"
+  );
+
+  STATUS_LIST.forEach(
+    function (status) {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        status.value;
+
+      option.textContent =
+        status.label;
+
+      option.selected =
+        status.value ===
+        selectedStatus;
+
+      select.appendChild(
+        option
+      );
+    }
+  );
 
   return select;
 }
 
 export function setupModalOverlay() {
-  modalOverlay.addEventListener("click", function (event) {
-    if (event.target === modalOverlay) {
+  if (isModalOverlayInitialized) {
+    return;
+  }
+
+  if (!modalOverlay) {
+    console.error(
+      "モーダル背景が見つかりません"
+    );
+
+    return;
+  }
+
+  modalOverlay.addEventListener(
+    "click",
+    function (event) {
+      if (
+        event.target ===
+        modalOverlay
+      ) {
+        closeModal();
+      }
+    }
+  );
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (
+        event.key !==
+        "Escape"
+      ) {
+        return;
+      }
+
+      if (
+        modalOverlay.classList.contains(
+          "hidden"
+        )
+      ) {
+        return;
+      }
+
       closeModal();
     }
-  });
+  );
+
+  isModalOverlayInitialized = true;
 }
 
-export function renderTaskDetail(task, callbacks) {
-  const { onTaskChange, onDateChange } = callbacks;
+export function renderTaskDetail(
+  task,
+  callbacks = {}
+) {
+  if (!hasModalElements()) {
+    console.error(
+      "モーダル表示に必要なHTML要素がありません"
+    );
 
-  modalOverlay.classList.remove("hidden");
-  modalContent.innerHTML = "";
+    return;
+  }
 
-  const title = document.createElement("h3");
-  title.textContent = task.title;
+  if (!task) {
+    console.error(
+      "表示するタスクがありません"
+    );
 
-  const description = document.createElement("p");
+    return;
+  }
+
+  const {
+    onTaskChange,
+    onDateChange
+  } = callbacks;
+
+  setModalVisible(true);
+  clearModalContent();
+
+  const title =
+    document.createElement(
+      "h3"
+    );
+
+  title.textContent =
+    task.title || "無題";
+
+  const description =
+    document.createElement(
+      "p"
+    );
 
   description.textContent =
-    task.description === ""
-      ? "詳細：なし"
-      : "詳細：" + task.description;
+    task.description
+      ? "詳細：" +
+        task.description
+      : "詳細：なし";
 
-  const assignee = document.createElement("p");
-  assignee.textContent = "担当者：" + getTaskAssignee(task);
+  const assignee =
+    document.createElement(
+      "p"
+    );
 
-  const startDate = document.createElement("p");
-  startDate.textContent = "開始日：" + task.createdAt;
+  assignee.textContent =
+    "担当者：" +
+    getTaskAssignee(task);
 
-  const deadline = document.createElement("p");
-  deadline.textContent = "締切日：" + task.deadline;
+  const startDate =
+    document.createElement(
+      "p"
+    );
 
-  const statusText = document.createElement("p");
-  statusText.textContent = "状態：";
+  startDate.textContent =
+    "開始日：" +
+    task.createdAt;
 
-  const statusBadge = document.createElement("span");
-  statusBadge.classList.add("status-badge");
-  statusBadge.classList.add(getStatusClass(task.status));
-  statusBadge.textContent = getStatusLabel(task.status);
+  const deadline =
+    document.createElement(
+      "p"
+    );
 
-  statusText.appendChild(statusBadge);
+  deadline.textContent =
+    "締切日：" +
+    task.deadline;
 
-  const statusSelect = renderStatusSelect(task.status);
+  const statusText =
+    document.createElement(
+      "p"
+    );
 
-  const changeStatusBtn = document.createElement("button");
-  changeStatusBtn.classList.add("modal-status-btn");
-  changeStatusBtn.textContent = "状態を変更";
+  statusText.textContent =
+    "状態：";
 
-  changeStatusBtn.addEventListener("click", function () {
-    task.status = statusSelect.value;
+  const statusBadge =
+    document.createElement(
+      "span"
+    );
 
-    saveTasks();
-    onTaskChange();
+  statusBadge.classList.add(
+    "status-badge"
+  );
 
-    renderTaskDetail(task, callbacks);
-  });
+  statusBadge.classList.add(
+    getStatusClass(
+      task.status
+    )
+  );
 
-  const editBtn = document.createElement("button");
-  editBtn.classList.add("modal-edit-btn");
-  editBtn.textContent = "編集";
+  statusBadge.textContent =
+    getStatusLabel(
+      task.status
+    );
 
-  editBtn.addEventListener("click", function () {
-    renderEditForm(task, callbacks);
-  });
+  statusText.appendChild(
+    statusBadge
+  );
 
-  const deleteBtn = document.createElement("button");
-  deleteBtn.classList.add("modal-delete-btn");
-  deleteBtn.textContent = "削除";
+  const statusSelect =
+    renderStatusSelect(
+      task.status
+    );
 
-  deleteBtn.addEventListener("click", function () {
-    const ok = confirm("この課題を削除しますか？");
+  const changeStatusBtn =
+    createButton(
+      "状態を変更",
+      "modal-status-btn",
+      function () {
+        if (
+          isProcessingModalAction
+        ) {
+          return;
+        }
 
-    if (!ok) {
-      return;
-    }
+        isProcessingModalAction =
+          true;
 
-    deleteTask(task.id);
-    onTaskChange();
-    closeModal();
-  });
+        setModalButtonsDisabled(
+          true
+        );
 
-  const closeBtn = document.createElement("button");
-  closeBtn.classList.add("modal-close-btn");
-  closeBtn.textContent = "閉じる";
+        try {
+          task.status =
+            statusSelect.value;
 
-  closeBtn.addEventListener("click", function () {
-    closeModal();
-  });
+          saveTasks();
 
-  modalContent.appendChild(title);
-  modalContent.appendChild(description);
-  modalContent.appendChild(assignee);
-  modalContent.appendChild(startDate);
-  modalContent.appendChild(deadline);
-  modalContent.appendChild(statusText);
-  modalContent.appendChild(statusSelect);
-  modalContent.appendChild(changeStatusBtn);
-  modalContent.appendChild(editBtn);
-  modalContent.appendChild(deleteBtn);
-  modalContent.appendChild(closeBtn);
+          runCallback(
+            onTaskChange
+          );
+
+          renderTaskDetail(
+            task,
+            callbacks
+          );
+        } catch (error) {
+          console.error(
+            "状態変更に失敗しました",
+            error
+          );
+
+          alert(
+            "状態変更に失敗しました"
+          );
+        } finally {
+          isProcessingModalAction =
+            false;
+
+          setModalButtonsDisabled(
+            false
+          );
+        }
+      }
+    );
+
+  const editBtn =
+    createButton(
+      "編集",
+      "modal-edit-btn",
+      function () {
+        renderEditForm(
+          task,
+          callbacks
+        );
+      }
+    );
+
+  const deleteBtn =
+    createButton(
+      "削除",
+      "modal-delete-btn",
+      function () {
+        if (
+          isProcessingModalAction
+        ) {
+          return;
+        }
+
+        const ok =
+          confirm(
+            "この課題を削除しますか？"
+          );
+
+        if (!ok) {
+          return;
+        }
+
+        isProcessingModalAction =
+          true;
+
+        setModalButtonsDisabled(
+          true
+        );
+
+        try {
+          deleteTask(
+            task.id
+          );
+
+          runCallback(
+            onTaskChange
+          );
+
+          setModalVisible(
+            false
+          );
+
+          clearModalContent();
+        } catch (error) {
+          console.error(
+            "タスクの削除に失敗しました",
+            error
+          );
+
+          alert(
+            "タスクの削除に失敗しました"
+          );
+        } finally {
+          isProcessingModalAction =
+            false;
+        }
+      }
+    );
+
+  const closeBtn =
+    createButton(
+      "閉じる",
+      "modal-close-btn",
+      function () {
+        closeModal();
+      }
+    );
+
+  modalContent.appendChild(
+    title
+  );
+
+  modalContent.appendChild(
+    description
+  );
+
+  modalContent.appendChild(
+    assignee
+  );
+
+  modalContent.appendChild(
+    startDate
+  );
+
+  modalContent.appendChild(
+    deadline
+  );
+
+  modalContent.appendChild(
+    statusText
+  );
+
+  modalContent.appendChild(
+    statusSelect
+  );
+
+  modalContent.appendChild(
+    changeStatusBtn
+  );
+
+  modalContent.appendChild(
+    editBtn
+  );
+
+  modalContent.appendChild(
+    deleteBtn
+  );
+
+  modalContent.appendChild(
+    closeBtn
+  );
 }
 
-function renderEditForm(task, callbacks) {
-  const { onTaskChange, onDateChange } = callbacks;
+function createLabel(
+  text
+) {
+  const label =
+    document.createElement(
+      "label"
+    );
 
-  modalOverlay.classList.remove("hidden");
-  modalContent.innerHTML = "";
+  label.textContent =
+    text;
 
-  const titleLabel = document.createElement("label");
-  titleLabel.textContent = "課題名";
+  return label;
+}
 
-  const titleEdit = document.createElement("input");
-  titleEdit.classList.add("edit-input");
-  titleEdit.value = task.title;
+function createInput(
+  value,
+  type = "text"
+) {
+  const input =
+    document.createElement(
+      "input"
+    );
 
-  const descriptionLabel = document.createElement("label");
-  descriptionLabel.textContent = "詳細";
+  input.classList.add(
+    "edit-input"
+  );
 
-  const descriptionEdit = document.createElement("textarea");
-  descriptionEdit.classList.add("edit-textarea");
-  descriptionEdit.value = task.description;
+  input.type =
+    type;
 
-  const assigneeLabel = document.createElement("label");
-  assigneeLabel.textContent = "担当者";
+  input.value =
+    value || "";
 
-  const assigneeEdit = document.createElement("input");
-  assigneeEdit.classList.add("edit-input");
-  assigneeEdit.value = task.assignee || "";
+  return input;
+}
 
-  const startDateLabel = document.createElement("label");
-  startDateLabel.textContent = "開始日";
+function renderEditForm(
+  task,
+  callbacks = {}
+) {
+  if (!hasModalElements()) {
+    return;
+  }
 
-  const startDateEdit = document.createElement("input");
-  startDateEdit.classList.add("edit-input");
-  startDateEdit.type = "date";
-  startDateEdit.value = task.createdAt;
+  const {
+    onTaskChange,
+    onDateChange
+  } = callbacks;
 
-  const deadlineLabel = document.createElement("label");
-  deadlineLabel.textContent = "締切日";
+  setModalVisible(true);
+  clearModalContent();
 
-  const deadlineEdit = document.createElement("input");
-  deadlineEdit.classList.add("edit-input");
-  deadlineEdit.type = "date";
-  deadlineEdit.value = task.deadline;
+  const titleLabel =
+    createLabel(
+      "課題名"
+    );
 
-  const statusLabel = document.createElement("label");
-  statusLabel.textContent = "状態";
+  const titleEdit =
+    createInput(
+      task.title
+    );
 
-  const statusEdit = renderStatusSelect(task.status);
+  const descriptionLabel =
+    createLabel(
+      "詳細"
+    );
 
-  const saveBtn = document.createElement("button");
-  saveBtn.classList.add("modal-save-btn");
-  saveBtn.textContent = "保存";
+  const descriptionEdit =
+    document.createElement(
+      "textarea"
+    );
 
-  saveBtn.addEventListener("click", function () {
-    const editedTitle = titleEdit.value.trim();
-    const editedDescription = descriptionEdit.value.trim();
-    const editedAssignee = assigneeEdit.value.trim();
-    const editedStartDate = startDateEdit.value;
-    const editedDeadline = deadlineEdit.value;
-    const editedStatus = statusEdit.value;
+  descriptionEdit.classList.add(
+    "edit-textarea"
+  );
 
-    if (
-      editedTitle === "" ||
-      editedStartDate === "" ||
-      editedDeadline === ""
-    ) {
-      alert("課題名、開始日、締切日は必須です");
-      return;
-    }
+  descriptionEdit.value =
+    task.description || "";
 
-    if (editedStartDate > editedDeadline) {
-      alert("開始日は締切日より前の日付にしてください");
-      return;
-    }
+  const assigneeLabel =
+    createLabel(
+      "担当者"
+    );
 
-    task.title = editedTitle;
-    task.description = editedDescription;
-    task.assignee = editedAssignee;
-    task.createdAt = editedStartDate;
-    task.deadline = editedDeadline;
-    task.status = editedStatus;
+  const assigneeEdit =
+    createInput(
+      task.assignee
+    );
 
-    saveTasks();
+  const startDateLabel =
+    createLabel(
+      "開始日"
+    );
 
-    onDateChange(createDateFromString(editedDeadline));
-    onTaskChange();
+  const startDateEdit =
+    createInput(
+      task.createdAt,
+      "date"
+    );
 
-    renderTaskDetail(task, callbacks);
-  });
+  const deadlineLabel =
+    createLabel(
+      "締切日"
+    );
 
-  const cancelBtn = document.createElement("button");
-  cancelBtn.classList.add("modal-cancel-btn");
-  cancelBtn.textContent = "キャンセル";
+  const deadlineEdit =
+    createInput(
+      task.deadline,
+      "date"
+    );
 
-  cancelBtn.addEventListener("click", function () {
-    renderTaskDetail(task, callbacks);
-  });
+  const statusLabel =
+    createLabel(
+      "状態"
+    );
 
-  modalContent.appendChild(titleLabel);
-  modalContent.appendChild(titleEdit);
-  modalContent.appendChild(descriptionLabel);
-  modalContent.appendChild(descriptionEdit);
-  modalContent.appendChild(assigneeLabel);
-  modalContent.appendChild(assigneeEdit);
-  modalContent.appendChild(startDateLabel);
-  modalContent.appendChild(startDateEdit);
-  modalContent.appendChild(deadlineLabel);
-  modalContent.appendChild(deadlineEdit);
-  modalContent.appendChild(statusLabel);
-  modalContent.appendChild(statusEdit);
-  modalContent.appendChild(saveBtn);
-  modalContent.appendChild(cancelBtn);
+  const statusEdit =
+    renderStatusSelect(
+      task.status
+    );
+
+  const saveBtn =
+    createButton(
+      "保存",
+      "modal-save-btn",
+      function () {
+        if (
+          isProcessingModalAction
+        ) {
+          return;
+        }
+
+        const editedTitle =
+          titleEdit.value.trim();
+
+        const editedDescription =
+          descriptionEdit.value.trim();
+
+        const editedAssignee =
+          assigneeEdit.value.trim();
+
+        const editedStartDate =
+          startDateEdit.value;
+
+        const editedDeadline =
+          deadlineEdit.value;
+
+        const editedStatus =
+          statusEdit.value;
+
+        if (
+          editedTitle === "" ||
+          editedStartDate === "" ||
+          editedDeadline === ""
+        ) {
+          alert(
+            "課題名、開始日、締切日は必須です"
+          );
+
+          return;
+        }
+
+        if (
+          editedStartDate >
+          editedDeadline
+        ) {
+          alert(
+            "開始日は締切日より前の日付にしてください"
+          );
+
+          return;
+        }
+
+        isProcessingModalAction =
+          true;
+
+        setModalButtonsDisabled(
+          true
+        );
+
+        try {
+          task.title =
+            editedTitle;
+
+          task.description =
+            editedDescription;
+
+          task.assignee =
+            editedAssignee;
+
+          task.createdAt =
+            editedStartDate;
+
+          task.deadline =
+            editedDeadline;
+
+          task.status =
+            editedStatus;
+
+          saveTasks();
+
+          runCallback(
+            onDateChange,
+            createDateFromString(
+              editedDeadline
+            )
+          );
+
+          runCallback(
+            onTaskChange
+          );
+
+          renderTaskDetail(
+            task,
+            callbacks
+          );
+        } catch (error) {
+          console.error(
+            "タスク編集の保存に失敗しました",
+            error
+          );
+
+          alert(
+            "タスク編集の保存に失敗しました"
+          );
+        } finally {
+          isProcessingModalAction =
+            false;
+
+          setModalButtonsDisabled(
+            false
+          );
+        }
+      }
+    );
+
+  const cancelBtn =
+    createButton(
+      "キャンセル",
+      "modal-cancel-btn",
+      function () {
+        renderTaskDetail(
+          task,
+          callbacks
+        );
+      }
+    );
+
+  modalContent.appendChild(
+    titleLabel
+  );
+
+  modalContent.appendChild(
+    titleEdit
+  );
+
+  modalContent.appendChild(
+    descriptionLabel
+  );
+
+  modalContent.appendChild(
+    descriptionEdit
+  );
+
+  modalContent.appendChild(
+    assigneeLabel
+  );
+
+  modalContent.appendChild(
+    assigneeEdit
+  );
+
+  modalContent.appendChild(
+    startDateLabel
+  );
+
+  modalContent.appendChild(
+    startDateEdit
+  );
+
+  modalContent.appendChild(
+    deadlineLabel
+  );
+
+  modalContent.appendChild(
+    deadlineEdit
+  );
+
+  modalContent.appendChild(
+    statusLabel
+  );
+
+  modalContent.appendChild(
+    statusEdit
+  );
+
+  modalContent.appendChild(
+    saveBtn
+  );
+
+  modalContent.appendChild(
+    cancelBtn
+  );
 }

@@ -11,140 +11,437 @@ import {
 } from "./filters.js";
 
 const boardContentArea =
-  document.getElementById("boardContentArea");
+  document.getElementById(
+    "boardContentArea"
+  );
 
-export function renderBoard(options) {
-  const {
-    filteredTasks,
-    onTaskClick,
-    onTaskChange
-  } = options;
+function runCallback(
+  callback,
+  ...args
+) {
+  if (
+    typeof callback !==
+    "function"
+  ) {
+    return;
+  }
 
-  boardContentArea.innerHTML = "";
+  callback(...args);
+}
 
-  if (filteredTasks.length === 0) {
-    boardContentArea.innerHTML =
-      "<p>該当するタスクがありません</p>";
+function createEmptyMessage(
+  text
+) {
+  const message =
+    document.createElement(
+      "p"
+    );
+
+  message.textContent =
+    text;
+
+  return message;
+}
+
+function findTaskById(
+  taskId
+) {
+  return tasks.find(
+    function (task) {
+      return task.id === taskId;
+    }
+  );
+}
+
+function isValidTaskId(
+  taskId
+) {
+  return (
+    Number.isFinite(taskId) &&
+    taskId > 0
+  );
+}
+
+function handleTaskDrop(
+  event,
+  targetStatus,
+  onTaskChange
+) {
+  event.preventDefault();
+
+  const taskIdText =
+    event.dataTransfer.getData(
+      "taskId"
+    );
+
+  const taskId =
+    Number(taskIdText);
+
+  if (
+    !isValidTaskId(
+      taskId
+    )
+  ) {
+    console.error(
+      "ドラッグされたタスクIDが不正です:",
+      taskIdText
+    );
 
     return;
   }
 
-  const columns = document.createElement("div");
-  columns.classList.add("board-columns");
+  const targetTask =
+    findTaskById(
+      taskId
+    );
 
-  STATUS_LIST.forEach(function (status) {
-    const column = document.createElement("div");
+  if (!targetTask) {
+    console.error(
+      "移動対象のタスクが見つかりません:",
+      taskId
+    );
 
-    column.classList.add("board-column");
-    column.dataset.status = status.value;
+    return;
+  }
 
-    column.addEventListener("dragover", function (event) {
+  if (
+    targetTask.status ===
+    targetStatus
+  ) {
+    return;
+  }
+
+  targetTask.status =
+    targetStatus;
+
+  try {
+    saveTasks();
+
+    runCallback(
+      onTaskChange
+    );
+  } catch (error) {
+    console.error(
+      "ボード上のタスク移動に失敗しました",
+      error
+    );
+  }
+}
+
+function createBoardColumn(
+  status,
+  statusTasks,
+  callbacks
+) {
+  const {
+    onTaskClick,
+    onTaskChange
+  } = callbacks;
+
+  const column =
+    document.createElement(
+      "div"
+    );
+
+  column.classList.add(
+    "board-column"
+  );
+
+  column.dataset.status =
+    status.value;
+
+  column.addEventListener(
+    "dragover",
+    function (event) {
       event.preventDefault();
-      column.classList.add("drag-over");
-    });
 
-    column.addEventListener("dragleave", function () {
-      column.classList.remove("drag-over");
-    });
-
-    column.addEventListener("drop", function (event) {
-      event.preventDefault();
-      column.classList.remove("drag-over");
-
-      const taskId = Number(
-        event.dataTransfer.getData("taskId")
+      column.classList.add(
+        "drag-over"
       );
+    }
+  );
 
-      const targetTask = tasks.find(function (task) {
-        return task.id === taskId;
-      });
-
-      if (!targetTask) {
+  column.addEventListener(
+    "dragleave",
+    function (event) {
+      if (
+        column.contains(
+          event.relatedTarget
+        )
+      ) {
         return;
       }
 
-      targetTask.status = column.dataset.status;
-
-      saveTasks();
-      onTaskChange();
-    });
-
-    const statusTasks = filteredTasks.filter(function (task) {
-      return task.status === status.value;
-    });
-
-    const heading = document.createElement("h4");
-
-    heading.textContent =
-      status.label + "（" + statusTasks.length + "）";
-
-    column.appendChild(heading);
-
-    if (statusTasks.length === 0) {
-      const emptyText = document.createElement("p");
-
-      emptyText.textContent = "なし";
-      emptyText.classList.add("task-list-meta");
-
-      column.appendChild(emptyText);
+      column.classList.remove(
+        "drag-over"
+      );
     }
+  );
 
-    statusTasks.forEach(function (task) {
-      const card = document.createElement("div");
+  column.addEventListener(
+    "drop",
+    function (event) {
+      column.classList.remove(
+        "drag-over"
+      );
 
-      card.classList.add("board-card");
-      card.classList.add(getStatusClass(task.status));
-      card.draggable = true;
+      handleTaskDrop(
+        event,
+        status.value,
+        onTaskChange
+      );
+    }
+  );
 
-      const expired = isTaskExpired(task);
+  const heading =
+    document.createElement(
+      "h4"
+    );
 
-      if (expired) {
-        card.classList.add("expired");
-      }
+  heading.textContent =
+    status.label +
+    "（" +
+    statusTasks.length +
+    "）";
 
-      card.addEventListener("dragstart", function (event) {
-        event.dataTransfer.setData(
-          "taskId",
-          String(task.id)
+  column.appendChild(
+    heading
+  );
+
+  if (
+    statusTasks.length === 0
+  ) {
+    const emptyText =
+      createEmptyMessage(
+        "なし"
+      );
+
+    emptyText.classList.add(
+      "task-list-meta"
+    );
+
+    column.appendChild(
+      emptyText
+    );
+  }
+
+  statusTasks.forEach(
+    function (task) {
+      const card =
+        createBoardCard(
+          task,
+          onTaskClick
         );
 
-        card.classList.add("dragging");
-      });
+      column.appendChild(
+        card
+      );
+    }
+  );
 
-      card.addEventListener("dragend", function () {
-        card.classList.remove("dragging");
-      });
+  return column;
+}
 
-      const title = document.createElement("div");
+function createBoardCard(
+  task,
+  onTaskClick
+) {
+  const card =
+    document.createElement(
+      "div"
+    );
 
-      title.classList.add("board-card-title");
+  card.classList.add(
+    "board-card"
+  );
 
-      title.textContent = expired
-        ? "⚠ " + task.title
-        : task.title;
+  card.classList.add(
+    getStatusClass(
+      task.status
+    )
+  );
 
-      const meta = document.createElement("div");
+  card.draggable =
+    true;
 
-      meta.classList.add("board-card-meta");
+  const expired =
+    isTaskExpired(
+      task
+    );
 
-      meta.textContent =
-        "担当者：" +
-        getTaskAssignee(task) +
-        " / 締切：" +
-        task.deadline;
+  if (expired) {
+    card.classList.add(
+      "expired"
+    );
+  }
 
-      card.appendChild(title);
-      card.appendChild(meta);
+  card.addEventListener(
+    "dragstart",
+    function (event) {
+      event.dataTransfer.effectAllowed =
+        "move";
 
-      card.addEventListener("click", function () {
-        onTaskClick(task);
-      });
+      event.dataTransfer.setData(
+        "taskId",
+        String(task.id)
+      );
 
-      column.appendChild(card);
-    });
+      card.classList.add(
+        "dragging"
+      );
+    }
+  );
 
-    columns.appendChild(column);
-  });
+  card.addEventListener(
+    "dragend",
+    function () {
+      card.classList.remove(
+        "dragging"
+      );
 
-  boardContentArea.appendChild(columns);
+      const columns =
+        document.querySelectorAll(
+          ".board-column"
+        );
+
+      columns.forEach(
+        function (column) {
+          column.classList.remove(
+            "drag-over"
+          );
+        }
+      );
+    }
+  );
+
+  const title =
+    document.createElement(
+      "div"
+    );
+
+  title.classList.add(
+    "board-card-title"
+  );
+
+  title.textContent =
+    expired
+      ? "⚠ " +
+        task.title
+      : task.title;
+
+  const meta =
+    document.createElement(
+      "div"
+    );
+
+  meta.classList.add(
+    "board-card-meta"
+  );
+
+  meta.textContent =
+    "担当者：" +
+    getTaskAssignee(task) +
+    " / 締切：" +
+    task.deadline;
+
+  card.appendChild(
+    title
+  );
+
+  card.appendChild(
+    meta
+  );
+
+  card.addEventListener(
+    "click",
+    function () {
+      runCallback(
+        onTaskClick,
+        task
+      );
+    }
+  );
+
+  return card;
+}
+
+export function renderBoard(
+  options = {}
+) {
+  if (!boardContentArea) {
+    console.error(
+      "ボード表示エリアが見つかりません"
+    );
+
+    return;
+  }
+
+  const {
+    filteredTasks = [],
+    onTaskClick,
+    onTaskChange
+  } = options;
+
+  const safeTasks =
+    Array.isArray(
+      filteredTasks
+    )
+      ? filteredTasks
+      : [];
+
+  boardContentArea.innerHTML =
+    "";
+
+  if (
+    safeTasks.length === 0
+  ) {
+    boardContentArea.appendChild(
+      createEmptyMessage(
+        "該当するタスクがありません"
+      )
+    );
+
+    return;
+  }
+
+  const columns =
+    document.createElement(
+      "div"
+    );
+
+  columns.classList.add(
+    "board-columns"
+  );
+
+  STATUS_LIST.forEach(
+    function (status) {
+      const statusTasks =
+        safeTasks.filter(
+          function (task) {
+            return (
+              task.status ===
+              status.value
+            );
+          }
+        );
+
+      const column =
+        createBoardColumn(
+          status,
+          statusTasks,
+          {
+            onTaskClick,
+            onTaskChange
+          }
+        );
+
+      columns.appendChild(
+        column
+      );
+    }
+  );
+
+  boardContentArea.appendChild(
+    columns
+  );
 }

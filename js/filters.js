@@ -1,139 +1,737 @@
-import {
-  STATUS_LIST,
-  STATUS_ORDER,
-  getTodayString
-} from "./data.js";
+const STATUS_INFORMATION = {
+  todo: {
+    label: "未着手",
+    className: "status-todo"
+  },
 
-export function getStatusLabel(statusValue) {
-  const foundStatus = STATUS_LIST.find(function (status) {
-    return status.value === statusValue;
-  });
+  working: {
+    label: "作業中",
+    className: "status-working"
+  },
 
-  if (!foundStatus) {
-    return "未着手";
+  review: {
+    label: "確認中",
+    className: "status-review"
+  },
+
+  fix: {
+    label: "修正中",
+    className: "status-fix"
+  },
+
+  done: {
+    label: "完了",
+    className: "status-done"
+  }
+};
+
+const DEFAULT_FILTER_SETTINGS = {
+  searchKeyword: "",
+  status: "all",
+  assignee: "all",
+  deadline: "all",
+  sort: "deadlineAsc"
+};
+
+function createSafeText(
+  value
+) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "";
   }
 
-  return foundStatus.label;
+  return String(
+    value
+  ).trim();
 }
 
-export function getStatusClass(statusValue) {
-  return "status-" + statusValue;
-}
-
-export function isTaskDone(task) {
-  return task.status === "done";
-}
-
-export function isTaskExpired(task) {
-  return (
-    task.deadline < getTodayString() &&
-    !isTaskDone(task)
+function normalizeSearchText(
+  value
+) {
+  return createSafeText(
+    value
+  ).toLocaleLowerCase(
+    "ja"
   );
 }
 
-export function isTaskDueToday(task) {
-  return task.deadline === getTodayString();
+function isValidDate(
+  date
+) {
+  return (
+    date instanceof Date &&
+    !Number.isNaN(
+      date.getTime()
+    )
+  );
 }
 
-export function getTaskAssignee(task) {
-  if (!task.assignee || task.assignee.trim() === "") {
+function createSafeDate(
+  value
+) {
+  if (
+    value instanceof Date
+  ) {
+    const copiedDate =
+      new Date(
+        value.getFullYear(),
+        value.getMonth(),
+        value.getDate()
+      );
+
+    return isValidDate(
+      copiedDate
+    )
+      ? copiedDate
+      : null;
+  }
+
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return null;
+  }
+
+  const parts =
+    value.split("-");
+
+  if (
+    parts.length !== 3
+  ) {
+    return null;
+  }
+
+  const year =
+    Number(parts[0]);
+
+  const month =
+    Number(parts[1]);
+
+  const day =
+    Number(parts[2]);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return null;
+  }
+
+  const date =
+    new Date(
+      year,
+      month - 1,
+      day
+    );
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function getTodayDate() {
+  const now =
+    new Date();
+
+  return new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+}
+
+function compareText(
+  textA,
+  textB
+) {
+  return createSafeText(
+    textA
+  ).localeCompare(
+    createSafeText(
+      textB
+    ),
+    "ja",
+    {
+      numeric: true,
+      sensitivity: "base"
+    }
+  );
+}
+
+function compareDates(
+  dateTextA,
+  dateTextB,
+  invalidDatePosition = "last"
+) {
+  const dateA =
+    createSafeDate(
+      dateTextA
+    );
+
+  const dateB =
+    createSafeDate(
+      dateTextB
+    );
+
+  if (
+    dateA &&
+    dateB
+  ) {
+    return (
+      dateA.getTime() -
+      dateB.getTime()
+    );
+  }
+
+  if (
+    !dateA &&
+    !dateB
+  ) {
+    return 0;
+  }
+
+  if (
+    invalidDatePosition ===
+    "first"
+  ) {
+    return dateA
+      ? 1
+      : -1;
+  }
+
+  return dateA
+    ? -1
+    : 1;
+}
+
+function normalizeFilterSettings(
+  settings = {}
+) {
+  return {
+    searchKeyword:
+      createSafeText(
+        settings.searchKeyword ??
+        settings.search ??
+        DEFAULT_FILTER_SETTINGS.searchKeyword
+      ),
+
+    status:
+      createSafeText(
+        settings.status ??
+        DEFAULT_FILTER_SETTINGS.status
+      ) || "all",
+
+    assignee:
+      createSafeText(
+        settings.assignee ??
+        DEFAULT_FILTER_SETTINGS.assignee
+      ) || "all",
+
+    deadline:
+      createSafeText(
+        settings.deadline ??
+        DEFAULT_FILTER_SETTINGS.deadline
+      ) || "all",
+
+    sort:
+      createSafeText(
+        settings.sort ??
+        settings.sortOrder ??
+        DEFAULT_FILTER_SETTINGS.sort
+      ) || "deadlineAsc"
+  };
+}
+
+function matchesSearchKeyword(
+  task,
+  searchKeyword
+) {
+  const normalizedKeyword =
+    normalizeSearchText(
+      searchKeyword
+    );
+
+  if (
+    normalizedKeyword === ""
+  ) {
+    return true;
+  }
+
+  const searchableValues = [
+    task.title,
+    task.description,
+    getTaskAssignee(task),
+    getStatusLabel(task.status),
+    task.createdAt,
+    task.deadline
+  ];
+
+  return searchableValues.some(
+    function (value) {
+      return normalizeSearchText(
+        value
+      ).includes(
+        normalizedKeyword
+      );
+    }
+  );
+}
+
+function matchesStatus(
+  task,
+  selectedStatus
+) {
+  if (
+    selectedStatus === "all" ||
+    selectedStatus === ""
+  ) {
+    return true;
+  }
+
+  return (
+    createSafeText(
+      task.status
+    ) ===
+    selectedStatus
+  );
+}
+
+function matchesAssignee(
+  task,
+  selectedAssignee
+) {
+  if (
+    selectedAssignee === "all" ||
+    selectedAssignee === ""
+  ) {
+    return true;
+  }
+
+  return (
+    getTaskAssignee(
+      task
+    ) ===
+    selectedAssignee
+  );
+}
+
+function matchesDeadline(
+  task,
+  deadlineFilter
+) {
+  if (
+    deadlineFilter === "all" ||
+    deadlineFilter === ""
+  ) {
+    return true;
+  }
+
+  if (
+    deadlineFilter === "expired"
+  ) {
+    return isTaskExpired(
+      task
+    );
+  }
+
+  if (
+    deadlineFilter === "today"
+  ) {
+    const deadline =
+      createSafeDate(
+        task.deadline
+      );
+
+    const today =
+      getTodayDate();
+
+    if (!deadline) {
+      return false;
+    }
+
+    return (
+      deadline.getTime() ===
+      today.getTime()
+    );
+  }
+
+  if (
+    deadlineFilter === "week"
+  ) {
+    const deadline =
+      createSafeDate(
+        task.deadline
+      );
+
+    if (!deadline) {
+      return false;
+    }
+
+    const today =
+      getTodayDate();
+
+    const sevenDaysLater =
+      new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 7
+      );
+
+    return (
+      deadline.getTime() >=
+        today.getTime() &&
+      deadline.getTime() <=
+        sevenDaysLater.getTime()
+    );
+  }
+
+  if (
+    deadlineFilter === "month"
+  ) {
+    const deadline =
+      createSafeDate(
+        task.deadline
+      );
+
+    if (!deadline) {
+      return false;
+    }
+
+    const today =
+      getTodayDate();
+
+    return (
+      deadline.getFullYear() ===
+        today.getFullYear() &&
+      deadline.getMonth() ===
+        today.getMonth()
+    );
+  }
+
+  if (
+    deadlineFilter ===
+    "noDeadline"
+  ) {
+    return (
+      createSafeDate(
+        task.deadline
+      ) === null
+    );
+  }
+
+  return true;
+}
+
+function sortByStatus(
+  taskA,
+  taskB
+) {
+  const statusOrder = {
+    todo: 0,
+    working: 1,
+    review: 2,
+    fix: 3,
+    done: 4
+  };
+
+  const orderA =
+    statusOrder[
+      taskA.status
+    ] ?? 999;
+
+  const orderB =
+    statusOrder[
+      taskB.status
+    ] ?? 999;
+
+  if (
+    orderA !== orderB
+  ) {
+    return orderA - orderB;
+  }
+
+  return compareDates(
+    taskA.deadline,
+    taskB.deadline
+  );
+}
+
+function sortTaskArray(
+  taskArray,
+  sortType
+) {
+  const copiedTasks = [
+    ...taskArray
+  ];
+
+  copiedTasks.sort(
+    function (taskA, taskB) {
+      switch (sortType) {
+        case "deadlineDesc":
+          return compareDates(
+            taskB.deadline,
+            taskA.deadline
+          );
+
+        case "startDateAsc":
+        case "createdAtAsc":
+          return compareDates(
+            taskA.createdAt,
+            taskB.createdAt
+          );
+
+        case "startDateDesc":
+        case "createdAtDesc":
+          return compareDates(
+            taskB.createdAt,
+            taskA.createdAt
+          );
+
+        case "titleAsc":
+          return compareText(
+            taskA.title,
+            taskB.title
+          );
+
+        case "titleDesc":
+          return compareText(
+            taskB.title,
+            taskA.title
+          );
+
+        case "assigneeAsc":
+          return compareText(
+            getTaskAssignee(taskA),
+            getTaskAssignee(taskB)
+          );
+
+        case "assigneeDesc":
+          return compareText(
+            getTaskAssignee(taskB),
+            getTaskAssignee(taskA)
+          );
+
+        case "status":
+        case "statusAsc":
+          return sortByStatus(
+            taskA,
+            taskB
+          );
+
+        case "deadlineAsc":
+        default:
+          return compareDates(
+            taskA.deadline,
+            taskB.deadline
+          );
+      }
+    }
+  );
+
+  return copiedTasks;
+}
+
+export function getStatusLabel(
+  status
+) {
+  const normalizedStatus =
+    createSafeText(
+      status
+    );
+
+  return (
+    STATUS_INFORMATION[
+      normalizedStatus
+    ]?.label ??
+    "不明"
+  );
+}
+
+export function getStatusClass(
+  status
+) {
+  const normalizedStatus =
+    createSafeText(
+      status
+    );
+
+  return (
+    STATUS_INFORMATION[
+      normalizedStatus
+    ]?.className ??
+    "status-unknown"
+  );
+}
+
+export function getTaskAssignee(
+  task
+) {
+  if (
+    !task ||
+    typeof task !==
+      "object"
+  ) {
     return "未設定";
   }
 
-  return task.assignee.trim();
+  const assignee =
+    createSafeText(
+      task.assignee
+    );
+
+  return assignee !== ""
+    ? assignee
+    : "未設定";
 }
 
-export function filterTasks(taskArray, filterSettings) {
-  const {
-    searchKeyword,
-    statusFilter,
-    assigneeFilter,
-    deadlineFilter
-  } = filterSettings;
-
-  let result = taskArray.slice();
-
-  if (searchKeyword !== "") {
-    const keyword = searchKeyword.toLowerCase();
-
-    result = result.filter(function (task) {
-      const title = task.title.toLowerCase();
-      const description = task.description.toLowerCase();
-      const assignee = getTaskAssignee(task).toLowerCase();
-      const statusLabel = getStatusLabel(task.status).toLowerCase();
-
-      return (
-        title.includes(keyword) ||
-        description.includes(keyword) ||
-        assignee.includes(keyword) ||
-        statusLabel.includes(keyword)
-      );
-    });
+export function isTaskExpired(
+  task
+) {
+  if (
+    !task ||
+    typeof task !==
+      "object"
+  ) {
+    return false;
   }
 
-  if (statusFilter !== "all") {
-    result = result.filter(function (task) {
-      return task.status === statusFilter;
-    });
+  if (
+    task.status === "done"
+  ) {
+    return false;
   }
 
-  if (assigneeFilter !== "all") {
-    result = result.filter(function (task) {
-      return getTaskAssignee(task) === assigneeFilter;
-    });
+  const deadline =
+    createSafeDate(
+      task.deadline
+    );
+
+  if (!deadline) {
+    return false;
   }
 
-  if (deadlineFilter === "expired") {
-    result = result.filter(function (task) {
-      return isTaskExpired(task);
-    });
-  }
+  const today =
+    getTodayDate();
 
-  if (deadlineFilter === "today") {
-    result = result.filter(function (task) {
-      return isTaskDueToday(task);
-    });
-  }
-
-  return result;
+  return (
+    deadline.getTime() <
+    today.getTime()
+  );
 }
 
-export function sortTasks(taskArray, selectedSort) {
-  const sortedTasks = taskArray.slice();
+export function filterTasks(
+  taskArray,
+  filterSettings = {}
+) {
+  const safeTasks =
+    Array.isArray(
+      taskArray
+    )
+      ? taskArray.filter(
+          function (task) {
+            return (
+              task &&
+              typeof task ===
+                "object"
+            );
+          }
+        )
+      : [];
 
-  sortedTasks.sort(function (a, b) {
-    if (selectedSort === "deadline") {
-      return a.deadline.localeCompare(b.deadline);
-    }
+  const settings =
+    normalizeFilterSettings(
+      filterSettings
+    );
 
-    if (selectedSort === "startDate") {
-      return a.createdAt.localeCompare(b.createdAt);
-    }
-
-    if (selectedSort === "title") {
-      return a.title.localeCompare(b.title, "ja");
-    }
-
-    if (selectedSort === "assignee") {
-      return getTaskAssignee(a).localeCompare(
-        getTaskAssignee(b),
-        "ja"
-      );
-    }
-
-    if (selectedSort === "status") {
-      const difference =
-        STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-
-      if (difference !== 0) {
-        return difference;
+  const filteredTasks =
+    safeTasks.filter(
+      function (task) {
+        return (
+          matchesSearchKeyword(
+            task,
+            settings.searchKeyword
+          ) &&
+          matchesStatus(
+            task,
+            settings.status
+          ) &&
+          matchesAssignee(
+            task,
+            settings.assignee
+          ) &&
+          matchesDeadline(
+            task,
+            settings.deadline
+          )
+        );
       }
+    );
 
-      return a.deadline.localeCompare(b.deadline);
-    }
+  return sortTaskArray(
+    filteredTasks,
+    settings.sort
+  );
+}
 
-    return a.deadline.localeCompare(b.deadline);
-  });
+export function sortTasks(
+  taskArray,
+  sortType =
+    DEFAULT_FILTER_SETTINGS.sort
+) {
+  const safeTasks =
+    Array.isArray(
+      taskArray
+    )
+      ? taskArray.filter(
+          function (task) {
+            return (
+              task &&
+              typeof task ===
+                "object"
+            );
+          }
+        )
+      : [];
 
-  return sortedTasks;
+  return sortTaskArray(
+    safeTasks,
+    sortType
+  );
+}
+
+export function applyTaskFilters(
+  taskArray,
+  filterSettings = {}
+) {
+  return filterTasks(
+    taskArray,
+    filterSettings
+  );
+}
+
+export function getFilteredTasks(
+  taskArray,
+  filterSettings = {}
+) {
+  return filterTasks(
+    taskArray,
+    filterSettings
+  );
+}
+
+export function getDefaultFilterSettings() {
+  return {
+    ...DEFAULT_FILTER_SETTINGS
+  };
 }

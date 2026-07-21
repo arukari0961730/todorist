@@ -2,98 +2,245 @@ import {
   isTaskExpired
 } from "./filters.js";
 
-const allCount = document.getElementById("allCount");
-const todoCount = document.getElementById("todoCount");
-const workingCount = document.getElementById("workingCount");
-const reviewCount = document.getElementById("reviewCount");
-const fixCount = document.getElementById("fixCount");
-const doneCount = document.getElementById("doneCount");
-const expiredCount = document.getElementById("expiredCount");
+const dashboardElements = {
+  counts: {
+    all:
+      document.getElementById("allCount"),
 
-const allCard = document.getElementById("allCard");
-const todoCard = document.getElementById("todoCard");
-const workingCard = document.getElementById("workingCard");
-const reviewCard = document.getElementById("reviewCard");
-const fixCard = document.getElementById("fixCard");
-const doneCard = document.getElementById("doneCard");
-const expiredCard = document.getElementById("expiredCard");
+    todo:
+      document.getElementById("todoCount"),
 
-export function renderDashboard(tasks) {
-  allCount.textContent = tasks.length;
+    working:
+      document.getElementById("workingCount"),
 
-  todoCount.textContent = tasks.filter(function (task) {
-    return task.status === "todo";
-  }).length;
+    review:
+      document.getElementById("reviewCount"),
 
-  workingCount.textContent = tasks.filter(function (task) {
-    return task.status === "working";
-  }).length;
+    fix:
+      document.getElementById("fixCount"),
 
-  reviewCount.textContent = tasks.filter(function (task) {
-    return task.status === "review";
-  }).length;
+    done:
+      document.getElementById("doneCount"),
 
-  fixCount.textContent = tasks.filter(function (task) {
-    return task.status === "fix";
-  }).length;
+    expired:
+      document.getElementById("expiredCount")
+  },
 
-  doneCount.textContent = tasks.filter(function (task) {
-    return task.status === "done";
-  }).length;
+  cards: {
+    all:
+      document.getElementById("allCard"),
 
-  expiredCount.textContent = tasks.filter(function (task) {
-    return isTaskExpired(task);
-  }).length;
+    todo:
+      document.getElementById("todoCard"),
+
+    working:
+      document.getElementById("workingCard"),
+
+    review:
+      document.getElementById("reviewCard"),
+
+    fix:
+      document.getElementById("fixCard"),
+
+    done:
+      document.getElementById("doneCard"),
+
+    expired:
+      document.getElementById("expiredCard")
+  }
+};
+
+let isDashboardInitialized = false;
+
+function setCount(
+  element,
+  count
+) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    String(count);
 }
 
-export function setupDashboard(onFilterChange) {
-  allCard.addEventListener("click", function () {
-    onFilterChange({
+function countTasksByStatus(
+  tasks,
+  status
+) {
+  return tasks.filter(
+    function (task) {
+      return task.status === status;
+    }
+  ).length;
+}
+
+function addCardClickEvent(
+  card,
+  filterSettings,
+  onFilterChange
+) {
+  if (!card) {
+    return;
+  }
+
+  card.addEventListener(
+    "click",
+    function () {
+      onFilterChange(
+        filterSettings
+      );
+    }
+  );
+}
+
+export function renderDashboard(
+  tasks
+) {
+  const safeTasks =
+    Array.isArray(tasks)
+      ? tasks
+      : [];
+
+  setCount(
+    dashboardElements.counts.all,
+    safeTasks.length
+  );
+
+  setCount(
+    dashboardElements.counts.todo,
+    countTasksByStatus(
+      safeTasks,
+      "todo"
+    )
+  );
+
+  setCount(
+    dashboardElements.counts.working,
+    countTasksByStatus(
+      safeTasks,
+      "working"
+    )
+  );
+
+  setCount(
+    dashboardElements.counts.review,
+    countTasksByStatus(
+      safeTasks,
+      "review"
+    )
+  );
+
+  setCount(
+    dashboardElements.counts.fix,
+    countTasksByStatus(
+      safeTasks,
+      "fix"
+    )
+  );
+
+  setCount(
+    dashboardElements.counts.done,
+    countTasksByStatus(
+      safeTasks,
+      "done"
+    )
+  );
+
+  const expiredTaskCount =
+    safeTasks.filter(
+      function (task) {
+        return isTaskExpired(task);
+      }
+    ).length;
+
+  setCount(
+    dashboardElements.counts.expired,
+    expiredTaskCount
+  );
+}
+
+export function setupDashboard(
+  onFilterChange
+) {
+  if (isDashboardInitialized) {
+    return;
+  }
+
+  if (
+    typeof onFilterChange !==
+    "function"
+  ) {
+    console.error(
+      "ダッシュボードのフィルター処理が設定されていません"
+    );
+
+    return;
+  }
+
+  addCardClickEvent(
+    dashboardElements.cards.all,
+    {
       status: "all",
       assignee: "all",
       deadline: "all"
-    });
-  });
+    },
+    onFilterChange
+  );
 
-  todoCard.addEventListener("click", function () {
-    onFilterChange({
+  addCardClickEvent(
+    dashboardElements.cards.todo,
+    {
       status: "todo",
       deadline: "all"
-    });
-  });
+    },
+    onFilterChange
+  );
 
-  workingCard.addEventListener("click", function () {
-    onFilterChange({
+  addCardClickEvent(
+    dashboardElements.cards.working,
+    {
       status: "working",
       deadline: "all"
-    });
-  });
+    },
+    onFilterChange
+  );
 
-  reviewCard.addEventListener("click", function () {
-    onFilterChange({
+  addCardClickEvent(
+    dashboardElements.cards.review,
+    {
       status: "review",
       deadline: "all"
-    });
-  });
+    },
+    onFilterChange
+  );
 
-  fixCard.addEventListener("click", function () {
-    onFilterChange({
+  addCardClickEvent(
+    dashboardElements.cards.fix,
+    {
       status: "fix",
       deadline: "all"
-    });
-  });
+    },
+    onFilterChange
+  );
 
-  doneCard.addEventListener("click", function () {
-    onFilterChange({
+  addCardClickEvent(
+    dashboardElements.cards.done,
+    {
       status: "done",
       deadline: "all"
-    });
-  });
+    },
+    onFilterChange
+  );
 
-  expiredCard.addEventListener("click", function () {
-    onFilterChange({
+  addCardClickEvent(
+    dashboardElements.cards.expired,
+    {
       status: "all",
       deadline: "expired"
-    });
-  });
+    },
+    onFilterChange
+  );
+
+  isDashboardInitialized = true;
 }
