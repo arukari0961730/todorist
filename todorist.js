@@ -1,11 +1,9 @@
 import {
   tasks,
-  getTodayString,
   normalizeTasks
 } from "./js/data.js";
 
 import {
-  getTaskAssignee,
   filterTasks,
   sortTasks
 } from "./js/filters.js";
@@ -40,27 +38,20 @@ import {
   setupTaskForm
 } from "./js/form.js";
 
-const prevBtn = document.getElementById("prevBtn");
-const todayBtn = document.getElementById("todayBtn");
-const nextBtn = document.getElementById("nextBtn");
+import {
+  setupFilterControls,
+  renderAssigneeFilterOptions,
+  setFilterControlValues
+} from "./js/filterControls.js";
 
-const calendarTab = document.getElementById("calendarTab");
-const listTab = document.getElementById("listTab");
-const ganttTab = document.getElementById("ganttTab");
-const boardTab = document.getElementById("boardTab");
-
-const calendarArea = document.getElementById("calendarArea");
-const listArea = document.getElementById("listArea");
-const ganttArea = document.getElementById("ganttArea");
-const boardArea = document.getElementById("boardArea");
-
-const searchInput = document.getElementById("searchInput");
-const statusFilter = document.getElementById("statusFilter");
-const assigneeFilter = document.getElementById("assigneeFilter");
-const deadlineFilter = document.getElementById("deadlineFilter");
-const sortFilter = document.getElementById("sortFilter");
+import {
+  setupNavigation,
+  showView
+} from "./js/navigation.js";
 
 let viewDate = new Date();
+
+let currentView = "calendar";
 
 let searchKeyword = "";
 let selectedStatusFilter = "all";
@@ -83,7 +74,9 @@ function getFilteredTasks() {
 
 function openTaskDetail(task) {
   renderTaskDetail(task, {
-    onTaskChange: refreshAllViews,
+    onTaskChange: function () {
+      refreshApp();
+    },
 
     onDateChange: function (newDate) {
       viewDate = newDate;
@@ -116,175 +109,152 @@ function drawGanttChart() {
 function drawBoard() {
   renderBoard({
     filteredTasks: getFilteredTasks(),
+
     onTaskClick: openTaskDetail,
-    onTaskChange: refreshAllViews
-  });
-}
-function renderAssigneeFilterOptions() {
-  const currentValue = assigneeFilter.value;
 
-  assigneeFilter.innerHTML = "";
-
-  const allOption = document.createElement("option");
-
-  allOption.value = "all";
-  allOption.textContent = "すべての担当者";
-
-  assigneeFilter.appendChild(allOption);
-
-  const assignees = [];
-
-  tasks.forEach(function (task) {
-    const assigneeName = getTaskAssignee(task);
-
-    if (!assignees.includes(assigneeName)) {
-      assignees.push(assigneeName);
+    onTaskChange: function () {
+      refreshApp();
     }
   });
-
-  assignees.sort(function (a, b) {
-    return a.localeCompare(b, "ja");
-  });
-
-  assignees.forEach(function (assigneeName) {
-    const option = document.createElement("option");
-
-    option.value = assigneeName;
-    option.textContent = assigneeName;
-
-    assigneeFilter.appendChild(option);
-  });
-
-  if (
-    currentValue === "all" ||
-    assignees.includes(currentValue)
-  ) {
-    assigneeFilter.value = currentValue;
-    selectedAssigneeFilter = currentValue;
-  } else {
-    assigneeFilter.value = "all";
-    selectedAssigneeFilter = "all";
-  }
 }
-
-function handleDashboardFilter(filterSettings) {
-  if (filterSettings.status !== undefined) {
-    selectedStatusFilter = filterSettings.status;
-    statusFilter.value = filterSettings.status;
-  }
-
-  if (filterSettings.assignee !== undefined) {
-    selectedAssigneeFilter = filterSettings.assignee;
-    assigneeFilter.value = filterSettings.assignee;
-  }
-
-  if (filterSettings.deadline !== undefined) {
-    selectedDeadlineFilter = filterSettings.deadline;
-    deadlineFilter.value = filterSettings.deadline;
-  }
-
-  refreshAllViews();
-}
-
-function switchView(viewName) {
-  calendarArea.classList.add("hidden");
-  listArea.classList.add("hidden");
-  ganttArea.classList.add("hidden");
-  boardArea.classList.add("hidden");
-
-  calendarTab.classList.remove("active");
-  listTab.classList.remove("active");
-  ganttTab.classList.remove("active");
-  boardTab.classList.remove("active");
-
-  if (viewName === "calendar") {
-    calendarArea.classList.remove("hidden");
-    calendarTab.classList.add("active");
+function drawCurrentView() {
+  if (currentView === "calendar") {
     drawCalendar();
+    return;
   }
 
-  if (viewName === "list") {
-    listArea.classList.remove("hidden");
-    listTab.classList.add("active");
+  if (currentView === "list") {
     drawTaskList();
+    return;
   }
 
-  if (viewName === "gantt") {
-    ganttArea.classList.remove("hidden");
-    ganttTab.classList.add("active");
+  if (currentView === "gantt") {
     drawGanttChart();
+    return;
   }
 
-  if (viewName === "board") {
-    boardArea.classList.remove("hidden");
-    boardTab.classList.add("active");
+  if (currentView === "board") {
     drawBoard();
   }
 }
 
-function refreshAllViews() {
-  renderAssigneeFilterOptions();
-  renderDashboard(tasks);
-  drawCalendar();
-  drawTaskList();
-  drawGanttChart();
-  drawBoard();
+function handleViewChange(viewName) {
+  currentView = viewName;
+
+  drawCurrentView();
 }
-prevBtn.addEventListener("click", function () {
-  viewDate.setMonth(viewDate.getMonth() - 1);
-  drawCalendar();
-});
 
-todayBtn.addEventListener("click", function () {
+function handlePreviousMonth() {
+  viewDate.setMonth(
+    viewDate.getMonth() - 1
+  );
+
+  if (currentView === "calendar") {
+    drawCalendar();
+  }
+}
+
+function handleToday() {
   viewDate = new Date();
-  drawCalendar();
-});
 
-nextBtn.addEventListener("click", function () {
-  viewDate.setMonth(viewDate.getMonth() + 1);
-  drawCalendar();
-});
+  if (currentView === "calendar") {
+    drawCalendar();
+  }
+}
 
-calendarTab.addEventListener("click", function () {
-  switchView("calendar");
-});
+function handleNextMonth() {
+  viewDate.setMonth(
+    viewDate.getMonth() + 1
+  );
 
-listTab.addEventListener("click", function () {
-  switchView("list");
-});
+  if (currentView === "calendar") {
+    drawCalendar();
+  }
+}
+function updateFilterState(filterSettings) {
+  if (
+    filterSettings.searchKeyword !==
+    undefined
+  ) {
+    searchKeyword =
+      filterSettings.searchKeyword;
+  }
 
-ganttTab.addEventListener("click", function () {
-  switchView("gantt");
-});
+  if (
+    filterSettings.status !==
+    undefined
+  ) {
+    selectedStatusFilter =
+      filterSettings.status;
+  }
 
-boardTab.addEventListener("click", function () {
-  switchView("board");
-});
+  if (
+    filterSettings.assignee !==
+    undefined
+  ) {
+    selectedAssigneeFilter =
+      filterSettings.assignee;
+  }
 
-searchInput.addEventListener("input", function () {
-  searchKeyword = searchInput.value.trim();
-  refreshAllViews();
-});
+  if (
+    filterSettings.deadline !==
+    undefined
+  ) {
+    selectedDeadlineFilter =
+      filterSettings.deadline;
+  }
 
-statusFilter.addEventListener("change", function () {
-  selectedStatusFilter = statusFilter.value;
-  refreshAllViews();
-});
+  if (
+    filterSettings.sort !==
+    undefined
+  ) {
+    selectedSort =
+      filterSettings.sort;
+  }
+}
 
-assigneeFilter.addEventListener("change", function () {
-  selectedAssigneeFilter = assigneeFilter.value;
-  refreshAllViews();
-});
+function updateFilterControls() {
+  setFilterControlValues({
+    searchKeyword: searchKeyword,
+    status: selectedStatusFilter,
+    assignee: selectedAssigneeFilter,
+    deadline: selectedDeadlineFilter,
+    sort: selectedSort
+  });
+}
 
-deadlineFilter.addEventListener("change", function () {
-  selectedDeadlineFilter = deadlineFilter.value;
-  refreshAllViews();
-});
+function handleFilterChange(filterSettings) {
+  updateFilterState(filterSettings);
 
-sortFilter.addEventListener("change", function () {
-  selectedSort = sortFilter.value;
-  refreshAllViews();
-});
+  updateFilterControls();
+
+  drawCurrentView();
+}
+
+function handleDashboardFilter(filterSettings) {
+  updateFilterState(filterSettings);
+
+  updateFilterControls();
+
+  drawCurrentView();
+}
+function refreshAssigneeFilter() {
+  selectedAssigneeFilter =
+    renderAssigneeFilterOptions(
+      tasks,
+      selectedAssigneeFilter
+    );
+
+  updateFilterControls();
+}
+
+function refreshApp() {
+  refreshAssigneeFilter();
+
+  renderDashboard(tasks);
+
+  drawCurrentView();
+}
 normalizeTasks();
 
 setupModalOverlay();
@@ -293,14 +263,38 @@ setupDashboard(
   handleDashboardFilter
 );
 
+setupFilterControls(
+  handleFilterChange
+);
+
 setupTaskForm({
-  onTaskAdded: refreshAllViews,
+  onTaskAdded: function () {
+    refreshApp();
+  },
 
   onDateChange: function (newDate) {
     viewDate = newDate;
   }
 });
 
-renderAssigneeFilterOptions();
+setupNavigation({
+  onPreviousMonth:
+    handlePreviousMonth,
+
+  onToday:
+    handleToday,
+
+  onNextMonth:
+    handleNextMonth,
+
+  onViewChange:
+    handleViewChange
+});
+
+refreshAssigneeFilter();
+
 renderDashboard(tasks);
-drawCalendar();
+
+showView(currentView);
+
+drawCurrentView();
