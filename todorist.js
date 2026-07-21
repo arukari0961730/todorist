@@ -49,26 +49,39 @@ import {
   showView
 } from "./js/navigation.js";
 
-let viewDate = new Date();
-
-let currentView = "calendar";
-
-let searchKeyword = "";
-let selectedStatusFilter = "all";
-let selectedAssigneeFilter = "all";
-let selectedDeadlineFilter = "all";
-let selectedSort = "deadline";
+import {
+  getViewDate,
+  setViewDate,
+  moveViewMonth,
+  resetViewDateToToday,
+  getCurrentView,
+  setCurrentView,
+  getFilterState,
+  updateFilterState,
+  setAssigneeFilter
+} from "./js/appState.js";
 function getFilteredTasks() {
-  const filteredTasks = filterTasks(tasks, {
-    searchKeyword: searchKeyword,
-    statusFilter: selectedStatusFilter,
-    assigneeFilter: selectedAssigneeFilter,
-    deadlineFilter: selectedDeadlineFilter
-  });
+  const filterState =
+    getFilterState();
+
+  const filteredTasks =
+    filterTasks(tasks, {
+      searchKeyword:
+        filterState.searchKeyword,
+
+      statusFilter:
+        filterState.status,
+
+      assigneeFilter:
+        filterState.assignee,
+
+      deadlineFilter:
+        filterState.deadline
+    });
 
   return sortTasks(
     filteredTasks,
-    selectedSort
+    filterState.sort
   );
 }
 
@@ -79,14 +92,14 @@ function openTaskDetail(task) {
     },
 
     onDateChange: function (newDate) {
-      viewDate = newDate;
+      setViewDate(newDate);
     }
   });
 }
 
 function drawCalendar() {
   renderCalendar({
-    viewDate: viewDate,
+    viewDate: getViewDate(),
     tasks: getFilteredTasks(),
     onTaskClick: openTaskDetail
   });
@@ -108,16 +121,22 @@ function drawGanttChart() {
 
 function drawBoard() {
   renderBoard({
-    filteredTasks: getFilteredTasks(),
+    filteredTasks:
+      getFilteredTasks(),
 
-    onTaskClick: openTaskDetail,
+    onTaskClick:
+      openTaskDetail,
 
-    onTaskChange: function () {
-      refreshApp();
-    }
+    onTaskChange:
+      function () {
+        refreshApp();
+      }
   });
 }
 function drawCurrentView() {
+  const currentView =
+    getCurrentView();
+
   if (currentView === "calendar") {
     drawCalendar();
     return;
@@ -139,111 +158,98 @@ function drawCurrentView() {
 }
 
 function handleViewChange(viewName) {
-  currentView = viewName;
+  setCurrentView(viewName);
 
   drawCurrentView();
 }
 
 function handlePreviousMonth() {
-  viewDate.setMonth(
-    viewDate.getMonth() - 1
-  );
+  moveViewMonth(-1);
 
-  if (currentView === "calendar") {
+  if (
+    getCurrentView() === "calendar"
+  ) {
     drawCalendar();
   }
 }
 
 function handleToday() {
-  viewDate = new Date();
+  resetViewDateToToday();
 
-  if (currentView === "calendar") {
+  if (
+    getCurrentView() === "calendar"
+  ) {
     drawCalendar();
   }
 }
 
 function handleNextMonth() {
-  viewDate.setMonth(
-    viewDate.getMonth() + 1
-  );
+  moveViewMonth(1);
 
-  if (currentView === "calendar") {
+  if (
+    getCurrentView() === "calendar"
+  ) {
     drawCalendar();
   }
 }
-function updateFilterState(filterSettings) {
-  if (
-    filterSettings.searchKeyword !==
-    undefined
-  ) {
-    searchKeyword =
-      filterSettings.searchKeyword;
-  }
-
-  if (
-    filterSettings.status !==
-    undefined
-  ) {
-    selectedStatusFilter =
-      filterSettings.status;
-  }
-
-  if (
-    filterSettings.assignee !==
-    undefined
-  ) {
-    selectedAssigneeFilter =
-      filterSettings.assignee;
-  }
-
-  if (
-    filterSettings.deadline !==
-    undefined
-  ) {
-    selectedDeadlineFilter =
-      filterSettings.deadline;
-  }
-
-  if (
-    filterSettings.sort !==
-    undefined
-  ) {
-    selectedSort =
-      filterSettings.sort;
-  }
-}
-
 function updateFilterControls() {
+  const filterState =
+    getFilterState();
+
   setFilterControlValues({
-    searchKeyword: searchKeyword,
-    status: selectedStatusFilter,
-    assignee: selectedAssigneeFilter,
-    deadline: selectedDeadlineFilter,
-    sort: selectedSort
+    searchKeyword:
+      filterState.searchKeyword,
+
+    status:
+      filterState.status,
+
+    assignee:
+      filterState.assignee,
+
+    deadline:
+      filterState.deadline,
+
+    sort:
+      filterState.sort
   });
 }
 
-function handleFilterChange(filterSettings) {
-  updateFilterState(filterSettings);
+function handleFilterChange(
+  filterSettings
+) {
+  updateFilterState(
+    filterSettings
+  );
 
   updateFilterControls();
 
   drawCurrentView();
 }
 
-function handleDashboardFilter(filterSettings) {
-  updateFilterState(filterSettings);
+function handleDashboardFilter(
+  filterSettings
+) {
+  updateFilterState(
+    filterSettings
+  );
 
   updateFilterControls();
 
   drawCurrentView();
 }
 function refreshAssigneeFilter() {
-  selectedAssigneeFilter =
+  const filterState =
+    getFilterState();
+
+  const selectedAssignee =
     renderAssigneeFilterOptions(
       tasks,
-      selectedAssigneeFilter
+      filterState.assignee
     );
+
+  setAssigneeFilter(
+    selectedAssignee
+  );
 
   updateFilterControls();
 }
@@ -273,7 +279,7 @@ setupTaskForm({
   },
 
   onDateChange: function (newDate) {
-    viewDate = newDate;
+    setViewDate(newDate);
   }
 });
 
@@ -295,6 +301,8 @@ refreshAssigneeFilter();
 
 renderDashboard(tasks);
 
-showView(currentView);
+showView(
+  getCurrentView()
+);
 
 drawCurrentView();
