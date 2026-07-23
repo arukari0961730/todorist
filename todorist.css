@@ -3,17 +3,24 @@
 }
 
 :root {
-  --main-blue: #3b82f6;
-  --main-blue-dark: #2563eb;
+  --main-blue: #4f46e5;
+  --main-blue-dark: #3730a3;
+  --main-blue-light: #eef2ff;
 
-  --background: #f4f6f8;
+  --background: #f1f5f9;
   --surface: #ffffff;
   --surface-light: #f8fafc;
 
   --text-main: #1f2937;
   --text-sub: #64748b;
 
-  --border: #d1d5db;
+  --border: #dbe3ec;
+
+  --danger: #dc2626;
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 10px 28px rgba(15, 23, 42, 0.10);
+  --radius-md: 12px;
+  --radius-lg: 16px;
 
   --todo: #9ca3af;
   --working: #3b82f6;
@@ -35,6 +42,7 @@ body {
 
   color: var(--text-main);
   background-color: var(--background);
+  line-height: 1.5;
 }
 
 /* ========================================
@@ -50,6 +58,16 @@ select {
 
 button {
   cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.22);
+  outline-offset: 2px;
 }
 
 .hidden {
@@ -76,7 +94,9 @@ button {
   align-items: center;
 
   color: white;
-  background-color: #1e293b;
+  background: linear-gradient(135deg, #111827, #312e81);
+
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.18);
 }
 
 .app-header h1 {
@@ -112,7 +132,11 @@ button {
   background-color: var(--surface);
 
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 24px;
+  align-self: start;
 }
 
 .sidebar h2 {
@@ -132,12 +156,16 @@ button {
   text-align: left;
   font-size: 15px;
 
-  background-color: #f1f5f9;
+  color: var(--text-main);
+  background-color: #f8fafc;
+  border: 1px solid transparent;
 }
 
 .team-btn:hover,
 .menu-btn:hover {
-  background-color: #e2e8f0;
+  background-color: var(--main-blue-light);
+  color: var(--main-blue-dark);
+  transform: translateX(3px);
 }
 
 .team-btn.active,
@@ -164,7 +192,8 @@ button {
   background-color: var(--surface);
 
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .form-section h2 {
@@ -188,16 +217,18 @@ button {
   padding: 10px;
 
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 9px;
 
   background-color: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-section input:focus,
 .form-section textarea:focus,
 .form-section select:focus {
-  outline: 2px solid #bfdbfe;
+  outline: none;
   border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
 }
 
 .form-section textarea {
@@ -211,9 +242,10 @@ button {
   padding: 12px;
 
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
 
   color: white;
+  font-weight: 700;
   background-color: var(--main-blue);
 
   font-size: 16px;
@@ -246,7 +278,8 @@ button {
   background-color: var(--surface);
 
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .dashboard-section h2 {
@@ -275,12 +308,16 @@ button {
 
   transition:
     transform 0.2s,
-    background-color 0.2s;
+    background-color 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .dashboard-card:hover {
-  transform: translateY(-2px);
-  background-color: #eef2ff;
+  transform: translateY(-4px);
+  background-color: #ffffff;
+  border-color: #c7d2fe;
+  box-shadow: var(--shadow-md);
 }
 
 .dashboard-count {
@@ -326,7 +363,8 @@ button {
   background-color: var(--surface);
 
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .section-header {
@@ -355,11 +393,15 @@ button {
   border: none;
   border-radius: 999px;
 
-  background-color: #e5e7eb;
+  color: #475569;
+  background-color: #eef2f7;
+  border: 1px solid transparent;
 }
 
 .tab-btn:hover {
-  background-color: #d1d5db;
+  color: var(--main-blue-dark);
+  background-color: var(--main-blue-light);
+  border-color: #c7d2fe;
 }
 
 .tab-btn.active {
@@ -384,12 +426,15 @@ button {
   padding: 11px;
 
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: 10px;
+  background-color: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .search-area input:focus {
-  outline: 2px solid #bfdbfe;
+  outline: none;
   border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
 }
 
 .filter-area {
@@ -408,6 +453,13 @@ button {
   border-radius: 8px;
 
   background-color: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-area select:focus {
+  outline: none;
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 /* ========================================
@@ -416,7 +468,9 @@ button {
 
 .status-todo {
   color: #374151;
-  background-color: #e5e7eb;
+  color: #475569;
+  background-color: #eef2f7;
+  border: 1px solid transparent;
 }
 
 .status-working {
@@ -474,9 +528,10 @@ button {
   padding: 8px 14px;
 
   border: none;
-  border-radius: 6px;
+  border-radius: 9px;
 
   color: white;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.18);
   background-color: var(--main-blue);
 }
 
@@ -529,11 +584,15 @@ button {
 }
 
 .calendar-cell:hover {
-  background-color: #f8fafc;
+  background-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .calendar-cell.other-month {
-  background-color: #f8fafc;
+  background-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .calendar-cell.other-month .date-number,
@@ -639,9 +698,7 @@ button {
 .task-list-card:hover {
   transform: translateY(-1px);
 
-  box-shadow:
-    0 4px 12px
-    rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .task-list-card:focus {
@@ -760,10 +817,8 @@ button {
 .board-columns {
   display: grid;
   grid-template-columns:
-    repeat(
-      5,
-      minmax(220px, 1fr)
-    );
+    repeat(5,
+      minmax(220px, 1fr));
 
   gap: 12px;
 
@@ -774,7 +829,7 @@ button {
   min-height: 320px;
   padding: 12px;
 
-  background-color: #e5e7eb;
+  background-color: #f1f5f9;
 
   border: 2px solid transparent;
   border-radius: 10px;
@@ -802,11 +857,15 @@ button {
 
   border: 1px solid #dbe2ea;
   border-left: 6px solid var(--todo);
-  border-radius: 8px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  transition: transform 0.18s, box-shadow 0.18s, background-color 0.18s;
 }
 
 .board-card:hover {
-  background-color: #f8fafc;
+  background-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .board-card:active {
@@ -892,7 +951,8 @@ button {
   background-color: white;
 
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .gantt-chart {
@@ -976,7 +1036,9 @@ button {
 
   text-align: left;
 
-  background-color: #f8fafc;
+  background-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .gantt-task-info:hover {
@@ -1136,11 +1198,9 @@ button {
 
   background-color: white;
 
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 
-  box-shadow:
-    0 20px 50px
-    rgba(15, 23, 42, 0.25);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.30);
 }
 
 .modal h2 {
@@ -1163,9 +1223,10 @@ button {
   padding: 10px;
 
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
 
   color: white;
+  font-weight: 700;
 }
 
 .modal-status-btn {
@@ -1206,16 +1267,79 @@ button {
 }
 
 /* ========================================
+   UI仕上げ
+======================================== */
+
+.form-section,
+.dashboard-section,
+.calendar-section,
+.sidebar {
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.form-section:hover,
+.dashboard-section:hover,
+.calendar-section:hover {
+  border-color: #cbd5e1;
+}
+
+.dashboard-card:active,
+.tab-btn:active,
+.calendar-header button:active,
+.form-section button:active,
+#modalContent button:active {
+  transform: translateY(1px);
+}
+
+.calendar-table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.calendar-cell.today {
+  box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.25);
+}
+
+.calendar-task-btn:focus-visible,
+.gantt-task-info:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.22);
+  outline-offset: 1px;
+}
+
+.task-list-card,
+.board-card,
+.gantt-task-info,
+.calendar-task-btn,
+.gantt-task-bar {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#modalContent button:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+#modalContent button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.edit-input:focus,
+.edit-textarea:focus,
+.edit-select:focus {
+  outline: none;
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.13);
+}
+
+/* ========================================
    レスポンシブ
 ======================================== */
 
 @media (max-width: 1100px) {
   .dashboard-grid {
     grid-template-columns:
-      repeat(
-        4,
-        minmax(120px, 1fr)
-      );
+      repeat(4,
+        minmax(120px, 1fr));
   }
 }
 
@@ -1226,6 +1350,7 @@ button {
 
   .sidebar {
     min-height: auto;
+    position: static;
   }
 
   .section-header {
@@ -1235,10 +1360,8 @@ button {
 
   .dashboard-grid {
     grid-template-columns:
-      repeat(
-        2,
-        minmax(120px, 1fr)
-      );
+      repeat(2,
+        minmax(120px, 1fr));
   }
 
   .filter-area select {
@@ -1259,6 +1382,7 @@ button {
   }
 
   .app-layout {
+    gap: 14px;
     padding: 12px;
   }
 
@@ -1270,6 +1394,15 @@ button {
 
   .dashboard-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .dashboard-card {
+    padding: 13px 8px;
+  }
+
+  .dashboard-count {
+    font-size: 23px;
   }
 
   .calendar-header {
@@ -1291,5 +1424,32 @@ button {
 
   .filter-area select {
     width: 100%;
+  }
+
+  .view-tabs {
+    width: 100%;
+  }
+
+  .tab-btn {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+  }
+
+  #listArea,
+  #boardArea,
+  #ganttArea {
+    padding: 12px;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 92vh;
+    padding: 20px;
+    border-radius: 18px 18px 10px 10px;
   }
 }

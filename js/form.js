@@ -1,7 +1,6 @@
 import {
   addTask,
-  getTodayString,
-  createDateFromString
+  getTodayString
 } from "./data.js";
 
 const titleInput =
@@ -194,8 +193,7 @@ function handleTaskAddition(
   }
 
   const {
-    onTaskAdded,
-    onDateChange
+    onTaskAdded
   } = callbacks;
 
   const task =
@@ -233,17 +231,6 @@ function handleTaskAddition(
 
   try {
     addTask(task);
-
-    if (
-      typeof onDateChange ===
-      "function"
-    ) {
-      onDateChange(
-        createDateFromString(
-          task.deadline
-        )
-      );
-    }
 
     if (
       typeof onTaskAdded ===
