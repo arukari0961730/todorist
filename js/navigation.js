@@ -7,6 +7,21 @@ const todayBtn =
 const nextBtn =
   document.getElementById("nextBtn");
 
+const ganttPrevBtn =
+  document.getElementById(
+    "ganttPrevBtn"
+  );
+
+const ganttTodayBtn =
+  document.getElementById(
+    "ganttTodayBtn"
+  );
+
+const ganttNextBtn =
+  document.getElementById(
+    "ganttNextBtn"
+  );
+
 const calendarTab =
   document.getElementById("calendarTab");
 
@@ -147,6 +162,27 @@ export function setupNavigation(
 
   addClickEvent(
     nextBtn,
+    function () {
+      onNextMonth();
+    }
+  );
+
+  addClickEvent(
+    ganttPrevBtn,
+    function () {
+      onPreviousMonth();
+    }
+  );
+
+  addClickEvent(
+    ganttTodayBtn,
+    function () {
+      onToday();
+    }
+  );
+
+  addClickEvent(
+    ganttNextBtn,
     function () {
       onNextMonth();
     }

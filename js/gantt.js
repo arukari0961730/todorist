@@ -9,6 +9,11 @@ const ganttChartArea =
     "ganttChartArea"
   );
 
+const ganttMonthTitle =
+  document.getElementById(
+    "ganttMonthTitle"
+  );
+
 const DAY_WIDTH = 42;
 const TASK_COLUMN_WIDTH = 180;
 
@@ -168,11 +173,11 @@ function isSameDate(
 ) {
   return (
     dateA.getFullYear() ===
-      dateB.getFullYear() &&
+    dateB.getFullYear() &&
     dateA.getMonth() ===
-      dateB.getMonth() &&
+    dateB.getMonth() &&
     dateA.getDate() ===
-      dateB.getDate()
+    dateB.getDate()
   );
 }
 
@@ -182,7 +187,7 @@ function hasValidTaskPeriod(
   if (
     !task ||
     typeof task !==
-      "object"
+    "object"
   ) {
     return false;
   }
@@ -233,9 +238,9 @@ function isTaskInMonth(
 
   return (
     taskEnd.getTime() >=
-      monthStart.getTime() &&
+    monthStart.getTime() &&
     taskStart.getTime() <=
-      monthEnd.getTime()
+    monthEnd.getTime()
   );
 }
 
@@ -394,9 +399,8 @@ function createGanttHeader(
     );
 
   timelineHeader.style.width =
-    `${
-      daysInMonth *
-      DAY_WIDTH
+    `${daysInMonth *
+    DAY_WIDTH
     }px`;
 
   for (
@@ -450,9 +454,8 @@ function createTimelineBackground(
     );
 
   background.style.width =
-    `${
-      daysInMonth *
-      DAY_WIDTH
+    `${daysInMonth *
+    DAY_WIDTH
     }px`;
 
   for (
@@ -606,17 +609,15 @@ function createTaskBar(
   }
 
   bar.style.left =
-    `${
-      startOffset *
-      DAY_WIDTH +
-      3
+    `${startOffset *
+    DAY_WIDTH +
+    3
     }px`;
 
   bar.style.width =
-    `${
-      visibleDays *
-      DAY_WIDTH -
-      6
+    `${visibleDays *
+    DAY_WIDTH -
+    6
     }px`;
 
   bar.textContent =
@@ -680,9 +681,8 @@ function createGanttRow(
     );
 
   timeline.style.width =
-    `${
-      daysInMonth *
-      DAY_WIDTH
+    `${daysInMonth *
+    DAY_WIDTH
     }px`;
 
   timeline.appendChild(
@@ -730,7 +730,7 @@ function normalizeOptions(
   if (
     firstArgument &&
     typeof firstArgument ===
-      "object" &&
+    "object" &&
     !(firstArgument instanceof Date) &&
     !Array.isArray(
       firstArgument
@@ -752,7 +752,7 @@ function normalizeOptions(
 
   const callbacks =
     thirdArgument &&
-    typeof thirdArgument ===
+      typeof thirdArgument ===
       "object"
       ? thirdArgument
       : {};
@@ -802,6 +802,12 @@ export function renderGantt(
     return;
   }
 
+  if (ganttMonthTitle) {
+    ganttMonthTitle.textContent =
+      `${currentDate.getFullYear()}年` +
+      `${currentDate.getMonth() + 1}月`;
+  }
+
   const monthStart =
     getMonthStartDate(
       currentDate
@@ -817,14 +823,14 @@ export function renderGantt(
       options.filteredTasks
     )
       ? options.filteredTasks.filter(
-          function (task) {
-            return isTaskInMonth(
-              task,
-              monthStart,
-              monthEnd
-            );
-          }
-        )
+        function (task) {
+          return isTaskInMonth(
+            task,
+            monthStart,
+            monthEnd
+          );
+        }
+      )
       : [];
 
   ganttChartArea.innerHTML =
@@ -864,10 +870,9 @@ export function renderGantt(
     );
 
   chart.style.width =
-    `${
-      TASK_COLUMN_WIDTH +
-      daysInMonth *
-        DAY_WIDTH
+    `${TASK_COLUMN_WIDTH +
+    daysInMonth *
+    DAY_WIDTH
     }px`;
 
   chart.appendChild(
