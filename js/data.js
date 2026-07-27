@@ -1,3 +1,8 @@
+import {
+  getFallbackTeamId,
+  hasTeam
+} from "./teams.js";
+
 export const STATUS_LIST = [
   {
     value: "todo",
@@ -215,6 +220,22 @@ function normalizeStatus(
   return "todo";
 }
 
+function normalizeTeamId(
+  teamId
+) {
+  const normalizedTeamId =
+    createSafeText(teamId);
+
+  if (
+    normalizedTeamId !== "" &&
+    hasTeam(normalizedTeamId)
+  ) {
+    return normalizedTeamId;
+  }
+
+  return getFallbackTeamId();
+}
+
 function createUniqueTaskId() {
   let newId =
     Date.now();
@@ -349,6 +370,13 @@ function normalizeTask(
     id:
       normalizeTaskId(
         task.id
+      ),
+
+    teamId:
+      normalizeTeamId(
+        task.teamId ??
+        task.groupId ??
+        task.projectId
       ),
 
     title,
@@ -862,6 +890,69 @@ export function getTaskById(
       }
     ) ?? null
   );
+}
+
+export function getTasksByTeamId(
+  teamId
+) {
+  const normalizedTeamId =
+    createSafeText(teamId);
+
+  return tasks.filter(
+    function (task) {
+      return (
+        task.teamId ===
+        normalizedTeamId
+      );
+    }
+  );
+}
+
+export function deleteTasksByTeamId(
+  teamId
+) {
+  const normalizedTeamId =
+    createSafeText(teamId);
+
+  if (normalizedTeamId === "") {
+    return false;
+  }
+
+  const oldTasks =
+    tasks.map(
+      function (task) {
+        return {
+          ...task
+        };
+      }
+    );
+
+  const remainingTasks =
+    tasks.filter(
+      function (task) {
+        return (
+          task.teamId !==
+          normalizedTeamId
+        );
+      }
+    );
+
+  replaceTasks(
+    remainingTasks
+  );
+
+  const saved =
+    saveTasks();
+
+  if (!saved) {
+    replaceTasks(
+      oldTasks
+    );
+
+    return false;
+  }
+
+  return true;
 }
 
 export function clearTasks() {

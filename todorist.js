@@ -4,6 +4,14 @@ import {
 } from "./js/data.js";
 
 import {
+  loadTeams
+} from "./js/teams.js";
+
+import {
+  setupTeamControls
+} from "./js/teamControls.js";
+
+import {
   getCurrentView,
   setCurrentView,
   getCurrentDate,
@@ -37,7 +45,8 @@ import {
   setupViewRenderer,
   renderCurrentView,
   updateFilterSettings,
-  getFilterSettings
+  getFilterSettings,
+  resetFilterSettings
 } from "./js/viewRenderer.js";
 
 let isApplicationInitialized =
@@ -103,6 +112,10 @@ function handleTaskClick(task) {
 
 function handleTaskDataChange() {
   renderCurrentView();
+}
+
+function handleTeamChange() {
+  resetFilterSettings();
 }
 
 function handleCalendarDateClick(date) {
@@ -227,18 +240,14 @@ function setupApplicationDashboard() {
 function setupApplicationForm() {
   setupTaskForm({
     onTaskAdded:
-      handleTaskDataChange,
+      handleTaskDataChange
+  });
+}
 
-    onDateChange:
-      function (date) {
-        if (!isValidDate(date)) {
-          return;
-        }
-
-        setCurrentDate(
-          createMonthDate(date)
-        );
-      }
+function setupApplicationTeams() {
+  setupTeamControls({
+    onTeamChange:
+      handleTeamChange
   });
 }
 
@@ -282,14 +291,16 @@ function initializeApplication() {
     true;
 
   /*
-    data.jsの末尾でもloadTasksが実行されているが、
-    配列は置換されるだけなので重複追加にはならない。
+    既存タスクへチームIDを補うため、
+    チームを先に読み込む。
   */
+  loadTeams();
   loadTasks();
 
   validateApplicationState();
 
   setupApplicationRenderer();
+  setupApplicationTeams();
   setupApplicationNavigation();
   setupApplicationFilters();
   setupApplicationDashboard();

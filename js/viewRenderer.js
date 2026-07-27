@@ -3,6 +3,10 @@ import {
 } from "./data.js";
 
 import {
+  getActiveTeamId
+} from "./teams.js";
+
+import {
   getCurrentView,
   getCurrentDate
 } from "./appState.js";
@@ -212,17 +216,35 @@ function createFilterSettingsForSearch() {
   };
 }
 
-function getFilteredTasks() {
+function getActiveTeamTasks() {
+  const activeTeamId =
+    getActiveTeamId();
+
+  return tasks.filter(
+    function (task) {
+      return (
+        task.teamId ===
+        activeTeamId
+      );
+    }
+  );
+}
+
+function getFilteredTasks(
+  teamTasks
+) {
   return filterTasks(
-    tasks,
+    teamTasks,
     createFilterSettingsForSearch()
   );
 }
 
-function updateAssigneeOptions() {
+function updateAssigneeOptions(
+  teamTasks
+) {
   const selectedAssignee =
     renderAssigneeFilterOptions(
-      tasks,
+      teamTasks,
       filterSettings.assignee
     );
 
@@ -439,17 +461,24 @@ export function renderCurrentView() {
   const currentDate =
     getSafeCurrentDate();
 
-  updateAssigneeOptions();
+  const teamTasks =
+    getActiveTeamTasks();
+
+  updateAssigneeOptions(
+    teamTasks
+  );
 
   setFilterControlValues(
     filterSettings
   );
 
   const filteredTasks =
-    getFilteredTasks();
+    getFilteredTasks(
+      teamTasks
+    );
 
   renderDashboard(
-    tasks
+    teamTasks
   );
 
   showView(
@@ -467,17 +496,24 @@ export function renderAllViews() {
   const currentDate =
     getSafeCurrentDate();
 
-  updateAssigneeOptions();
+  const teamTasks =
+    getActiveTeamTasks();
+
+  updateAssigneeOptions(
+    teamTasks
+  );
 
   setFilterControlValues(
     filterSettings
   );
 
   const filteredTasks =
-    getFilteredTasks();
+    getFilteredTasks(
+      teamTasks
+    );
 
   renderDashboard(
-    tasks
+    teamTasks
   );
 
   renderCalendarView(

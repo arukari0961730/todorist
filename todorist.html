@@ -37,31 +37,91 @@
     <aside class="sidebar">
       <h2>チーム</h2>
 
-      <button class="team-btn active">
-        個人ゲーム制作チーム
-      </button>
+      <!-- teams.js のデータから生成 -->
+      <div id="teamList" class="team-list"></div>
 
-      <button class="team-btn">
-        マルチゲーム制作チーム
-      </button>
+      <div class="team-actions">
+        <button
+          id="showTeamFormBtn"
+          class="team-action-btn team-add-btn"
+          type="button"
+        >
+          ＋ チームを追加
+        </button>
 
-      <button class="team-btn">
-        ガッツリゲーム制作チーム
-      </button>
+        <button
+          id="deleteTeamBtn"
+          class="team-action-btn team-delete-btn"
+          type="button"
+        >
+          選択中を削除
+        </button>
+      </div>
+
+      <div
+        id="teamCreateArea"
+        class="team-create-area hidden"
+      >
+        <label for="teamNameInput">新しいチーム名</label>
+
+        <input
+          type="text"
+          id="teamNameInput"
+          maxlength="30"
+          placeholder="チーム名を入力"
+        >
+
+        <div class="team-create-buttons">
+          <button
+            id="saveTeamBtn"
+            class="team-save-btn"
+            type="button"
+          >
+            追加
+          </button>
+
+          <button
+            id="cancelTeamBtn"
+            class="team-cancel-btn"
+            type="button"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+
+      <p id="teamMessage" class="team-message"></p>
 
       <hr>
 
       <nav class="side-menu">
-        <button class="menu-btn active">タスク</button>
-        <button class="menu-btn">カレンダー</button>
-        <button class="menu-btn">チャット</button>
-        <button class="menu-btn">PR共有</button>
-        <button class="menu-btn">メンバー</button>
+        <button
+          id="taskMenuBtn"
+          class="menu-btn active"
+          type="button"
+        >
+          タスク
+        </button>
+
+        <button
+          id="chatMenuBtn"
+          class="menu-btn"
+          type="button"
+          disabled
+          title="次の段階で実装予定"
+        >
+          チャット
+        </button>
       </nav>
     </aside>
 
     <!-- メイン -->
     <main class="main-content">
+
+      <div class="current-team-bar">
+        表示中のチーム：
+        <strong id="currentTeamName"></strong>
+      </div>
 
       <!-- タスク追加 -->
       <section class="form-section">

@@ -1,0 +1,404 @@
+import {
+  getTeams,
+  getActiveTeam,
+  getActiveTeamId,
+  setActiveTeam,
+  addTeam,
+  deleteTeam
+} from "./teams.js";
+
+import {
+  deleteTasksByTeamId,
+  exportTasks,
+  importTasks
+} from "./data.js";
+
+const teamList =
+  document.getElementById(
+    "teamList"
+  );
+
+const showTeamFormBtn =
+  document.getElementById(
+    "showTeamFormBtn"
+  );
+
+const teamCreateArea =
+  document.getElementById(
+    "teamCreateArea"
+  );
+
+const teamNameInput =
+  document.getElementById(
+    "teamNameInput"
+  );
+
+const saveTeamBtn =
+  document.getElementById(
+    "saveTeamBtn"
+  );
+
+const cancelTeamBtn =
+  document.getElementById(
+    "cancelTeamBtn"
+  );
+
+const deleteTeamBtn =
+  document.getElementById(
+    "deleteTeamBtn"
+  );
+
+const teamMessage =
+  document.getElementById(
+    "teamMessage"
+  );
+
+const currentTeamName =
+  document.getElementById(
+    "currentTeamName"
+  );
+
+let isTeamControlsInitialized =
+  false;
+
+let onTeamChangeCallback =
+  null;
+
+function runCallback(
+  callback,
+  ...args
+) {
+  if (
+    typeof callback ===
+    "function"
+  ) {
+    callback(...args);
+  }
+}
+
+function setMessage(
+  message,
+  type = ""
+) {
+  if (!teamMessage) {
+    return;
+  }
+
+  teamMessage.textContent =
+    message;
+
+  teamMessage.classList.remove(
+    "success",
+    "error"
+  );
+
+  if (type) {
+    teamMessage.classList.add(
+      type
+    );
+  }
+}
+
+function showCreateArea() {
+  if (!teamCreateArea) {
+    return;
+  }
+
+  teamCreateArea.classList.remove(
+    "hidden"
+  );
+
+  if (teamNameInput) {
+    teamNameInput.value = "";
+    teamNameInput.focus();
+  }
+
+  setMessage("");
+}
+
+function hideCreateArea() {
+  if (!teamCreateArea) {
+    return;
+  }
+
+  teamCreateArea.classList.add(
+    "hidden"
+  );
+
+  if (teamNameInput) {
+    teamNameInput.value = "";
+  }
+}
+
+function createTeamButton(team) {
+  const button =
+    document.createElement(
+      "button"
+    );
+
+  button.type = "button";
+  button.classList.add(
+    "team-btn"
+  );
+
+  button.textContent =
+    team.name;
+
+  button.dataset.teamId =
+    team.id;
+
+  if (
+    team.id ===
+    getActiveTeamId()
+  ) {
+    button.classList.add(
+      "active"
+    );
+
+    button.setAttribute(
+      "aria-current",
+      "true"
+    );
+  }
+
+  button.addEventListener(
+    "click",
+    function () {
+      if (
+        team.id ===
+        getActiveTeamId()
+      ) {
+        return;
+      }
+
+      const changed =
+        setActiveTeam(
+          team.id
+        );
+
+      if (!changed) {
+        setMessage(
+          "チームを切り替えられませんでした",
+          "error"
+        );
+
+        return;
+      }
+
+      setMessage("");
+      renderTeamControls();
+
+      runCallback(
+        onTeamChangeCallback,
+        getActiveTeam()
+      );
+    }
+  );
+
+  return button;
+}
+
+export function renderTeamControls() {
+  const currentTeams =
+    getTeams();
+
+  if (teamList) {
+    teamList.innerHTML = "";
+
+    currentTeams.forEach(
+      function (team) {
+        teamList.appendChild(
+          createTeamButton(team)
+        );
+      }
+    );
+  }
+
+  const activeTeam =
+    getActiveTeam();
+
+  if (currentTeamName) {
+    currentTeamName.textContent =
+      activeTeam
+        ? activeTeam.name
+        : "チーム未選択";
+  }
+
+  if (deleteTeamBtn) {
+    deleteTeamBtn.disabled =
+      currentTeams.length <= 1;
+
+    deleteTeamBtn.title =
+      currentTeams.length <= 1
+        ? "最後の1チームは削除できません"
+        : "選択中のチームを削除します";
+  }
+}
+
+function handleTeamAddition() {
+  if (!teamNameInput) {
+    return;
+  }
+
+  const result =
+    addTeam(
+      teamNameInput.value
+    );
+
+  if (!result.success) {
+    setMessage(
+      result.message,
+      "error"
+    );
+
+    return;
+  }
+
+  hideCreateArea();
+  renderTeamControls();
+
+  setMessage(
+    "チームを追加しました",
+    "success"
+  );
+
+  runCallback(
+    onTeamChangeCallback,
+    result.team
+  );
+}
+
+function handleTeamDeletion() {
+  const activeTeam =
+    getActiveTeam();
+
+  if (!activeTeam) {
+    return;
+  }
+
+  const confirmed =
+    window.confirm(
+      `「${activeTeam.name}」を削除しますか？\n\n` +
+      "このチームのタスクも削除されます。\n" +
+      "この操作は取り消せません。"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const taskBackup =
+    exportTasks();
+
+  const tasksDeleted =
+    deleteTasksByTeamId(
+      activeTeam.id
+    );
+
+  if (!tasksDeleted) {
+    setMessage(
+      "チームのタスクを削除できませんでした",
+      "error"
+    );
+
+    return;
+  }
+
+  const result =
+    deleteTeam(
+      activeTeam.id
+    );
+
+  if (!result.success) {
+    importTasks(
+      taskBackup
+    );
+
+    setMessage(
+      result.message,
+      "error"
+    );
+
+    return;
+  }
+
+  hideCreateArea();
+  renderTeamControls();
+
+  setMessage(
+    "チームを削除しました",
+    "success"
+  );
+
+  runCallback(
+    onTeamChangeCallback,
+    getActiveTeam()
+  );
+}
+
+export function setupTeamControls(
+  callbacks = {}
+) {
+  if (isTeamControlsInitialized) {
+    return;
+  }
+
+  onTeamChangeCallback =
+    typeof callbacks.onTeamChange ===
+      "function"
+      ? callbacks.onTeamChange
+      : null;
+
+  if (showTeamFormBtn) {
+    showTeamFormBtn.addEventListener(
+      "click",
+      showCreateArea
+    );
+  }
+
+  if (saveTeamBtn) {
+    saveTeamBtn.addEventListener(
+      "click",
+      handleTeamAddition
+    );
+  }
+
+  if (cancelTeamBtn) {
+    cancelTeamBtn.addEventListener(
+      "click",
+      function () {
+        hideCreateArea();
+        setMessage("");
+      }
+    );
+  }
+
+  if (deleteTeamBtn) {
+    deleteTeamBtn.addEventListener(
+      "click",
+      handleTeamDeletion
+    );
+  }
+
+  if (teamNameInput) {
+    teamNameInput.addEventListener(
+      "keydown",
+      function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleTeamAddition();
+        }
+
+        if (event.key === "Escape") {
+          hideCreateArea();
+          setMessage("");
+        }
+      }
+    );
+  }
+
+  isTeamControlsInitialized =
+    true;
+
+  renderTeamControls();
+}

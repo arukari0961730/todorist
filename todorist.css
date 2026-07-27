@@ -1453,3 +1453,162 @@ select:focus-visible,
     border-radius: 18px 18px 10px 10px;
   }
 }
+
+/* ========================================
+   チーム管理
+======================================== */
+
+.team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-list .team-btn {
+  margin-bottom: 0;
+}
+
+.team-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.team-action-btn,
+.team-save-btn,
+.team-cancel-btn {
+  width: 100%;
+  padding: 10px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  font-weight: 700;
+}
+
+.team-add-btn {
+  color: var(--main-blue-dark);
+  background-color: var(--main-blue-light);
+  border-color: #c7d2fe;
+}
+
+.team-add-btn:hover {
+  background-color: #e0e7ff;
+}
+
+.team-delete-btn {
+  color: #b91c1c;
+  background-color: #fff1f2;
+  border-color: #fecaca;
+}
+
+.team-delete-btn:hover:not(:disabled) {
+  background-color: #fee2e2;
+}
+
+.team-delete-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.team-create-area {
+  margin-top: 14px;
+  padding: 12px;
+
+  background-color: #f8fafc;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.team-create-area label {
+  display: block;
+  margin-bottom: 6px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.team-create-area input {
+  width: 100%;
+  padding: 9px 10px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.team-create-area input:focus {
+  outline: none;
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.team-create-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.team-save-btn {
+  color: white;
+  background-color: var(--main-blue);
+  border-color: var(--main-blue);
+}
+
+.team-save-btn:hover {
+  background-color: var(--main-blue-dark);
+}
+
+.team-cancel-btn {
+  color: #475569;
+  background-color: white;
+}
+
+.team-cancel-btn:hover {
+  background-color: #f1f5f9;
+}
+
+.team-message {
+  min-height: 20px;
+  margin: 8px 0 0;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.team-message.success {
+  color: #047857;
+}
+
+.team-message.error {
+  color: #b91c1c;
+}
+
+.menu-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.menu-btn:disabled:hover {
+  color: var(--text-main);
+  background-color: #f8fafc;
+  transform: none;
+}
+
+.current-team-bar {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+
+  color: #475569;
+  background-color: var(--main-blue-light);
+
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.current-team-bar strong {
+  color: var(--main-blue-dark);
+}

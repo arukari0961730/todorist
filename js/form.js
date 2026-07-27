@@ -3,6 +3,10 @@ import {
   getTodayString
 } from "./data.js";
 
+import {
+  getActiveTeamId
+} from "./teams.js";
+
 const titleInput =
   document.getElementById("titleInput");
 
@@ -129,6 +133,9 @@ function createTaskFromInput() {
   return {
     id:
       Date.now(),
+
+    teamId:
+      getActiveTeamId(),
 
     title:
       getTrimmedInputValue(
