@@ -107,8 +107,6 @@
           id="chatMenuBtn"
           class="menu-btn"
           type="button"
-          disabled
-          title="次の段階で実装予定"
         >
           チャット
         </button>
@@ -123,8 +121,10 @@
         <strong id="currentTeamName"></strong>
       </div>
 
-      <!-- タスク追加 -->
-      <section class="form-section">
+      <div id="taskPage">
+
+        <!-- タスク追加 -->
+        <section class="form-section">
         <h2>課題を追加</h2>
 
         <label for="titleInput">課題名</label>
@@ -305,6 +305,56 @@
           <div id="boardContentArea"></div>
         </div>
 
+        </section>
+
+      </div>
+
+      <!-- チャット -->
+      <section id="chatPage" class="chat-section hidden">
+        <div class="chat-header">
+          <div>
+            <h2 id="chatTeamTitle">チームチャット</h2>
+            <p>
+              選択中のチームだけで共有されるメッセージです。
+            </p>
+          </div>
+        </div>
+
+        <div
+          id="chatMessageList"
+          class="chat-message-list"
+          aria-live="polite"
+        ></div>
+
+        <form id="chatForm" class="chat-form">
+          <div class="chat-form-field">
+            <label for="chatSenderInput">名前</label>
+            <input
+              type="text"
+              id="chatSenderInput"
+              maxlength="30"
+              placeholder="送信者名"
+            >
+          </div>
+
+          <div class="chat-form-field">
+            <label for="chatTextInput">メッセージ</label>
+            <textarea
+              id="chatTextInput"
+              maxlength="1000"
+              placeholder="作業状況や相談内容を入力"
+            ></textarea>
+          </div>
+
+          <div class="chat-form-footer">
+            <span>Ctrl + Enterでも送信できます</span>
+            <button type="submit" id="chatSendBtn">
+              送信
+            </button>
+          </div>
+
+          <p id="chatErrorMessage" class="chat-error-message"></p>
+        </form>
       </section>
 
     </main>

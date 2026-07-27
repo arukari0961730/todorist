@@ -13,6 +13,12 @@ import {
   importTasks
 } from "./data.js";
 
+import {
+  deleteMessagesByTeamId,
+  exportMessages,
+  importMessages
+} from "./chatData.js";
+
 const teamList =
   document.getElementById(
     "teamList"
@@ -279,7 +285,7 @@ function handleTeamDeletion() {
   const confirmed =
     window.confirm(
       `「${activeTeam.name}」を削除しますか？\n\n` +
-      "このチームのタスクも削除されます。\n" +
+      "このチームのタスクとチャットも削除されます。\n" +
       "この操作は取り消せません。"
     );
 
@@ -289,6 +295,9 @@ function handleTeamDeletion() {
 
   const taskBackup =
     exportTasks();
+
+  const messageBackup =
+    exportMessages();
 
   const tasksDeleted =
     deleteTasksByTeamId(
@@ -304,6 +313,24 @@ function handleTeamDeletion() {
     return;
   }
 
+  const messagesDeleted =
+    deleteMessagesByTeamId(
+      activeTeam.id
+    );
+
+  if (!messagesDeleted) {
+    importTasks(
+      taskBackup
+    );
+
+    setMessage(
+      "チームのチャットを削除できませんでした",
+      "error"
+    );
+
+    return;
+  }
+
   const result =
     deleteTeam(
       activeTeam.id
@@ -312,6 +339,10 @@ function handleTeamDeletion() {
   if (!result.success) {
     importTasks(
       taskBackup
+    );
+
+    importMessages(
+      messageBackup
     );
 
     setMessage(

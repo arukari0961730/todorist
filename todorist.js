@@ -8,6 +8,19 @@ import {
 } from "./js/teams.js";
 
 import {
+  loadMessages
+} from "./js/chatData.js";
+
+import {
+  setupChat,
+  renderChat
+} from "./js/chat.js";
+
+import {
+  setupMainMenu
+} from "./js/mainMenu.js";
+
+import {
   setupTeamControls
 } from "./js/teamControls.js";
 
@@ -116,6 +129,7 @@ function handleTaskDataChange() {
 
 function handleTeamChange() {
   resetFilterSettings();
+  renderChat();
 }
 
 function handleCalendarDateClick(date) {
@@ -251,6 +265,20 @@ function setupApplicationTeams() {
   });
 }
 
+function setupApplicationChat() {
+  setupChat();
+}
+
+function setupApplicationMainMenu() {
+  setupMainMenu({
+    onTaskShow:
+      renderCurrentView,
+
+    onChatShow:
+      renderChat
+  });
+}
+
 function setupApplicationModal() {
   setupModalOverlay();
 }
@@ -296,11 +324,14 @@ function initializeApplication() {
   */
   loadTeams();
   loadTasks();
+  loadMessages();
 
   validateApplicationState();
 
   setupApplicationRenderer();
   setupApplicationTeams();
+  setupApplicationChat();
+  setupApplicationMainMenu();
   setupApplicationNavigation();
   setupApplicationFilters();
   setupApplicationDashboard();
@@ -308,6 +339,7 @@ function initializeApplication() {
   setupApplicationModal();
 
   renderCurrentView();
+  renderChat();
 
   console.log(
     "タスク管理アプリを起動しました"
