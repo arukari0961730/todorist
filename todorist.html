@@ -50,6 +50,14 @@
         </button>
 
         <button
+          id="showTeamRenameBtn"
+          class="team-action-btn team-rename-btn"
+          type="button"
+        >
+          チーム名を変更
+        </button>
+
+        <button
           id="deleteTeamBtn"
           class="team-action-btn team-delete-btn"
           type="button"
@@ -82,6 +90,38 @@
 
           <button
             id="cancelTeamBtn"
+            class="team-cancel-btn"
+            type="button"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="teamRenameArea"
+        class="team-create-area team-rename-area hidden"
+      >
+        <label for="teamRenameInput">新しいチーム名</label>
+
+        <input
+          type="text"
+          id="teamRenameInput"
+          maxlength="30"
+          placeholder="変更後のチーム名"
+        >
+
+        <div class="team-create-buttons">
+          <button
+            id="saveTeamRenameBtn"
+            class="team-save-btn"
+            type="button"
+          >
+            変更
+          </button>
+
+          <button
+            id="cancelTeamRenameBtn"
             class="team-cancel-btn"
             type="button"
           >

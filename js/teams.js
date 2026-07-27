@@ -459,6 +459,97 @@ export function addTeam(teamName) {
   };
 }
 
+export function renameTeam(
+  teamId,
+  newTeamName
+) {
+  const normalizedId =
+    createSafeText(teamId);
+
+  const normalizedName =
+    createSafeText(newTeamName);
+
+  if (normalizedName === "") {
+    return {
+      success: false,
+      message: "チーム名を入力してください"
+    };
+  }
+
+  if (normalizedName.length > 30) {
+    return {
+      success: false,
+      message: "チーム名は30文字以内にしてください"
+    };
+  }
+
+  const targetTeam =
+    teams.find(
+      function (team) {
+        return team.id === normalizedId;
+      }
+    );
+
+  if (!targetTeam) {
+    return {
+      success: false,
+      message: "変更するチームが見つかりません"
+    };
+  }
+
+  const duplicated =
+    teams.some(
+      function (team) {
+        return (
+          team.id !== normalizedId &&
+          team.name.toLocaleLowerCase(
+            "ja"
+          ) ===
+          normalizedName.toLocaleLowerCase(
+            "ja"
+          )
+        );
+      }
+    );
+
+  if (duplicated) {
+    return {
+      success: false,
+      message: "同じ名前のチームが存在します"
+    };
+  }
+
+  if (targetTeam.name === normalizedName) {
+    return {
+      success: false,
+      message: "変更前と同じチーム名です"
+    };
+  }
+
+  const oldName =
+    targetTeam.name;
+
+  targetTeam.name =
+    normalizedName;
+
+  if (!saveTeamState()) {
+    targetTeam.name =
+      oldName;
+
+    return {
+      success: false,
+      message: "チーム名を保存できませんでした"
+    };
+  }
+
+  return {
+    success: true,
+    team: {
+      ...targetTeam
+    }
+  };
+}
+
 export function deleteTeam(teamId) {
   if (teams.length <= 1) {
     return {

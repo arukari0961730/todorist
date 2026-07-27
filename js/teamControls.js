@@ -4,6 +4,7 @@ import {
   getActiveTeamId,
   setActiveTeam,
   addTeam,
+  renameTeam,
   deleteTeam
 } from "./teams.js";
 
@@ -49,6 +50,31 @@ const cancelTeamBtn =
     "cancelTeamBtn"
   );
 
+const showTeamRenameBtn =
+  document.getElementById(
+    "showTeamRenameBtn"
+  );
+
+const teamRenameArea =
+  document.getElementById(
+    "teamRenameArea"
+  );
+
+const teamRenameInput =
+  document.getElementById(
+    "teamRenameInput"
+  );
+
+const saveTeamRenameBtn =
+  document.getElementById(
+    "saveTeamRenameBtn"
+  );
+
+const cancelTeamRenameBtn =
+  document.getElementById(
+    "cancelTeamRenameBtn"
+  );
+
 const deleteTeamBtn =
   document.getElementById(
     "deleteTeamBtn"
@@ -68,6 +94,9 @@ let isTeamControlsInitialized =
   false;
 
 let onTeamChangeCallback =
+  null;
+
+let onTeamUpdateCallback =
   null;
 
 function runCallback(
@@ -106,6 +135,8 @@ function setMessage(
 }
 
 function showCreateArea() {
+  hideRenameArea();
+
   if (!teamCreateArea) {
     return;
   }
@@ -133,6 +164,48 @@ function hideCreateArea() {
 
   if (teamNameInput) {
     teamNameInput.value = "";
+  }
+}
+
+function showRenameArea() {
+  const activeTeam =
+    getActiveTeam();
+
+  if (
+    !teamRenameArea ||
+    !activeTeam
+  ) {
+    return;
+  }
+
+  hideCreateArea();
+
+  teamRenameArea.classList.remove(
+    "hidden"
+  );
+
+  if (teamRenameInput) {
+    teamRenameInput.value =
+      activeTeam.name;
+
+    teamRenameInput.focus();
+    teamRenameInput.select();
+  }
+
+  setMessage("");
+}
+
+function hideRenameArea() {
+  if (!teamRenameArea) {
+    return;
+  }
+
+  teamRenameArea.classList.add(
+    "hidden"
+  );
+
+  if (teamRenameInput) {
+    teamRenameInput.value = "";
   }
 }
 
@@ -191,6 +264,8 @@ function createTeamButton(team) {
         return;
       }
 
+      hideCreateArea();
+      hideRenameArea();
       setMessage("");
       renderTeamControls();
 
@@ -230,6 +305,16 @@ export function renderTeamControls() {
         : "チーム未選択";
   }
 
+  if (showTeamRenameBtn) {
+    showTeamRenameBtn.disabled =
+      activeTeam === null;
+
+    showTeamRenameBtn.title =
+      activeTeam
+        ? "選択中のチーム名を変更します"
+        : "変更するチームがありません";
+  }
+
   if (deleteTeamBtn) {
     deleteTeamBtn.disabled =
       currentTeams.length <= 1;
@@ -261,6 +346,7 @@ function handleTeamAddition() {
   }
 
   hideCreateArea();
+  hideRenameArea();
   renderTeamControls();
 
   setMessage(
@@ -270,6 +356,46 @@ function handleTeamAddition() {
 
   runCallback(
     onTeamChangeCallback,
+    result.team
+  );
+}
+
+function handleTeamRename() {
+  const activeTeam =
+    getActiveTeam();
+
+  if (
+    !activeTeam ||
+    !teamRenameInput
+  ) {
+    return;
+  }
+
+  const result =
+    renameTeam(
+      activeTeam.id,
+      teamRenameInput.value
+    );
+
+  if (!result.success) {
+    setMessage(
+      result.message,
+      "error"
+    );
+
+    return;
+  }
+
+  hideRenameArea();
+  renderTeamControls();
+
+  setMessage(
+    "チーム名を変更しました",
+    "success"
+  );
+
+  runCallback(
+    onTeamUpdateCallback,
     result.team
   );
 }
@@ -354,6 +480,7 @@ function handleTeamDeletion() {
   }
 
   hideCreateArea();
+  hideRenameArea();
   renderTeamControls();
 
   setMessage(
@@ -380,6 +507,12 @@ export function setupTeamControls(
       ? callbacks.onTeamChange
       : null;
 
+  onTeamUpdateCallback =
+    typeof callbacks.onTeamUpdate ===
+      "function"
+      ? callbacks.onTeamUpdate
+      : null;
+
   if (showTeamFormBtn) {
     showTeamFormBtn.addEventListener(
       "click",
@@ -391,6 +524,30 @@ export function setupTeamControls(
     saveTeamBtn.addEventListener(
       "click",
       handleTeamAddition
+    );
+  }
+
+  if (showTeamRenameBtn) {
+    showTeamRenameBtn.addEventListener(
+      "click",
+      showRenameArea
+    );
+  }
+
+  if (saveTeamRenameBtn) {
+    saveTeamRenameBtn.addEventListener(
+      "click",
+      handleTeamRename
+    );
+  }
+
+  if (cancelTeamRenameBtn) {
+    cancelTeamRenameBtn.addEventListener(
+      "click",
+      function () {
+        hideRenameArea();
+        setMessage("");
+      }
     );
   }
 
@@ -422,6 +579,23 @@ export function setupTeamControls(
 
         if (event.key === "Escape") {
           hideCreateArea();
+          setMessage("");
+        }
+      }
+    );
+  }
+
+  if (teamRenameInput) {
+    teamRenameInput.addEventListener(
+      "keydown",
+      function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleTeamRename();
+        }
+
+        if (event.key === "Escape") {
+          hideRenameArea();
           setMessage("");
         }
       }

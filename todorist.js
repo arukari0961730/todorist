@@ -132,6 +132,10 @@ function handleTeamChange() {
   renderChat();
 }
 
+function handleTeamUpdate() {
+  renderChat();
+}
+
 function handleCalendarDateClick(date) {
   if (!isValidDate(date)) {
     return;
@@ -261,7 +265,10 @@ function setupApplicationForm() {
 function setupApplicationTeams() {
   setupTeamControls({
     onTeamChange:
-      handleTeamChange
+      handleTeamChange,
+
+    onTeamUpdate:
+      handleTeamUpdate
   });
 }
 

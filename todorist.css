@@ -1497,6 +1497,21 @@ select:focus-visible,
   background-color: #e0e7ff;
 }
 
+.team-rename-btn {
+  color: #92400e;
+  background-color: #fffbeb;
+  border-color: #fde68a;
+}
+
+.team-rename-btn:hover:not(:disabled) {
+  background-color: #fef3c7;
+}
+
+.team-rename-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .team-delete-btn {
   color: #b91c1c;
   background-color: #fff1f2;
