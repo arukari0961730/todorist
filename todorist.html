@@ -150,6 +150,14 @@
         >
           チャット
         </button>
+
+        <button
+          id="prMenuBtn"
+          class="menu-btn"
+          type="button"
+        >
+          PR共有
+        </button>
       </nav>
     </aside>
 
@@ -395,6 +403,101 @@
 
           <p id="chatErrorMessage" class="chat-error-message"></p>
         </form>
+      </section>
+
+
+
+      <!-- PR共有 -->
+      <section id="prPage" class="pr-section hidden">
+        <div class="pr-header">
+          <div>
+            <h2 id="prTeamTitle">PR共有</h2>
+            <p>
+              GitHubのPull Requestをチームごとに登録して、レビュー状況を共有します。
+            </p>
+          </div>
+        </div>
+
+        <form id="prForm" class="pr-form">
+          <div class="pr-form-grid">
+            <div class="pr-form-field pr-form-wide">
+              <label for="prTitleInput">PRタイトル</label>
+              <input
+                type="text"
+                id="prTitleInput"
+                maxlength="100"
+                placeholder="例：プレイヤーのジャンプ処理を追加"
+              >
+            </div>
+
+            <div class="pr-form-field pr-form-wide">
+              <label for="prUrlInput">PRのURL</label>
+              <input
+                type="url"
+                id="prUrlInput"
+                maxlength="500"
+                placeholder="https://github.com/.../pull/1"
+              >
+            </div>
+
+            <div class="pr-form-field">
+              <label for="prAssigneeInput">担当者</label>
+              <input
+                type="text"
+                id="prAssigneeInput"
+                maxlength="30"
+                placeholder="担当者名"
+              >
+            </div>
+
+            <div class="pr-form-field">
+              <label for="prStatusInput">状態</label>
+              <select id="prStatusInput">
+                <option value="draft">下書き</option>
+                <option value="review" selected>レビュー待ち</option>
+                <option value="changes">修正対応中</option>
+                <option value="merged">マージ済み</option>
+                <option value="closed">クローズ</option>
+              </select>
+            </div>
+
+            <div class="pr-form-field pr-form-wide">
+              <label for="prTaskSelect">関連タスク</label>
+              <select id="prTaskSelect">
+                <option value="">関連タスクなし</option>
+              </select>
+            </div>
+
+            <div class="pr-form-field pr-form-wide">
+              <label for="prNoteInput">メモ</label>
+              <textarea
+                id="prNoteInput"
+                maxlength="1000"
+                placeholder="確認してほしい点や変更内容を入力"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="pr-form-footer">
+            <span>PRタイトルとURLは必須です</span>
+            <button type="submit" id="prAddBtn">
+              PRを登録
+            </button>
+          </div>
+
+          <p id="prErrorMessage" class="pr-error-message"></p>
+        </form>
+
+        <div class="pr-list-header">
+          <h3>登録済みPR</h3>
+          <span id="prCountText">0件</span>
+        </div>
+
+        <div
+          id="prList"
+          class="pr-list"
+          aria-live="polite"
+        ></div>
       </section>
 
     </main>

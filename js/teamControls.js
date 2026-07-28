@@ -26,6 +26,12 @@ import {
   importTaskComments
 } from "./taskCommentData.js";
 
+import {
+  deletePullRequestsByTeamId,
+  exportPullRequests,
+  importPullRequests
+} from "./prData.js";
+
 const teamList =
   document.getElementById(
     "teamList"
@@ -417,7 +423,7 @@ function handleTeamDeletion() {
   const confirmed =
     window.confirm(
       `「${activeTeam.name}」を削除しますか？\n\n` +
-      "このチームのタスク、チャット、コメントも削除されます。\n" +
+      "このチームのタスク、チャット、コメント、PR共有も削除されます。\n" +
       "この操作は取り消せません。"
     );
 
@@ -433,6 +439,9 @@ function handleTeamDeletion() {
 
   const commentBackup =
     exportTaskComments();
+
+  const pullRequestBackup =
+    exportPullRequests();
 
   const tasksDeleted =
     deleteTasksByTeamId(
@@ -488,6 +497,32 @@ function handleTeamDeletion() {
     return;
   }
 
+  const pullRequestsDeleted =
+    deletePullRequestsByTeamId(
+      activeTeam.id
+    );
+
+  if (!pullRequestsDeleted) {
+    importTasks(
+      taskBackup
+    );
+
+    importMessages(
+      messageBackup
+    );
+
+    importTaskComments(
+      commentBackup
+    );
+
+    setMessage(
+      "チームのPR共有データを削除できませんでした",
+      "error"
+    );
+
+    return;
+  }
+
   const result =
     deleteTeam(
       activeTeam.id
@@ -504,6 +539,10 @@ function handleTeamDeletion() {
 
     importTaskComments(
       commentBackup
+    );
+
+    importPullRequests(
+      pullRequestBackup
     );
 
     setMessage(

@@ -8,6 +8,11 @@ const chatMenuBtn =
     "chatMenuBtn"
   );
 
+const prMenuBtn =
+  document.getElementById(
+    "prMenuBtn"
+  );
+
 const taskPage =
   document.getElementById(
     "taskPage"
@@ -18,11 +23,36 @@ const chatPage =
     "chatPage"
   );
 
+const prPage =
+  document.getElementById(
+    "prPage"
+  );
+
+const PAGE_SETTINGS = {
+  task: {
+    button: taskMenuBtn,
+    page: taskPage
+  },
+
+  chat: {
+    button: chatMenuBtn,
+    page: chatPage
+  },
+
+  pr: {
+    button: prMenuBtn,
+    page: prPage
+  }
+};
+
 let currentPage = "task";
 let isMainMenuInitialized = false;
 
-let onTaskShowCallback = null;
-let onChatShowCallback = null;
+let pageCallbacks = {
+  task: null,
+  chat: null,
+  pr: null
+};
 
 function runCallback(callback) {
   if (
@@ -33,61 +63,62 @@ function runCallback(callback) {
   }
 }
 
+function isValidPageName(pageName) {
+  return Object.hasOwn(
+    PAGE_SETTINGS,
+    pageName
+  );
+}
+
 function updatePageDisplay() {
-  const isTaskPage =
-    currentPage === "task";
+  Object.entries(
+    PAGE_SETTINGS
+  ).forEach(
+    function ([pageName, settings]) {
+      const isActive =
+        pageName === currentPage;
 
-  if (taskPage) {
-    taskPage.classList.toggle(
-      "hidden",
-      !isTaskPage
-    );
-  }
+      if (settings.page) {
+        settings.page.classList.toggle(
+          "hidden",
+          !isActive
+        );
+      }
 
-  if (chatPage) {
-    chatPage.classList.toggle(
-      "hidden",
-      isTaskPage
-    );
-  }
+      if (settings.button) {
+        settings.button.classList.toggle(
+          "active",
+          isActive
+        );
 
-  if (taskMenuBtn) {
-    taskMenuBtn.classList.toggle(
-      "active",
-      isTaskPage
-    );
-  }
-
-  if (chatMenuBtn) {
-    chatMenuBtn.classList.toggle(
-      "active",
-      !isTaskPage
-    );
-  }
+        if (isActive) {
+          settings.button.setAttribute(
+            "aria-current",
+            "page"
+          );
+        } else {
+          settings.button.removeAttribute(
+            "aria-current"
+          );
+        }
+      }
+    }
+  );
 }
 
 export function showMainPage(
   pageName
 ) {
-  if (
-    pageName !== "task" &&
-    pageName !== "chat"
-  ) {
+  if (!isValidPageName(pageName)) {
     return false;
   }
 
   currentPage = pageName;
   updatePageDisplay();
 
-  if (currentPage === "task") {
-    runCallback(
-      onTaskShowCallback
-    );
-  } else {
-    runCallback(
-      onChatShowCallback
-    );
-  }
+  runCallback(
+    pageCallbacks[currentPage]
+  );
 
   return true;
 }
@@ -103,35 +134,42 @@ export function setupMainMenu(
     return;
   }
 
-  onTaskShowCallback =
-    typeof callbacks.onTaskShow ===
-      "function"
-      ? callbacks.onTaskShow
-      : null;
+  pageCallbacks = {
+    task:
+      typeof callbacks.onTaskShow ===
+        "function"
+        ? callbacks.onTaskShow
+        : null,
 
-  onChatShowCallback =
-    typeof callbacks.onChatShow ===
-      "function"
-      ? callbacks.onChatShow
-      : null;
+    chat:
+      typeof callbacks.onChatShow ===
+        "function"
+        ? callbacks.onChatShow
+        : null,
 
-  if (taskMenuBtn) {
-    taskMenuBtn.addEventListener(
-      "click",
-      function () {
-        showMainPage("task");
+    pr:
+      typeof callbacks.onPRShow ===
+        "function"
+        ? callbacks.onPRShow
+        : null
+  };
+
+  Object.entries(
+    PAGE_SETTINGS
+  ).forEach(
+    function ([pageName, settings]) {
+      if (!settings.button) {
+        return;
       }
-    );
-  }
 
-  if (chatMenuBtn) {
-    chatMenuBtn.addEventListener(
-      "click",
-      function () {
-        showMainPage("chat");
-      }
-    );
-  }
+      settings.button.addEventListener(
+        "click",
+        function () {
+          showMainPage(pageName);
+        }
+      );
+    }
+  );
 
   isMainMenuInitialized = true;
   updatePageDisplay();

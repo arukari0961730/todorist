@@ -2084,3 +2084,379 @@ select:focus-visible,
     width: 100%;
   }
 }
+
+
+/* ========================================
+   PR共有
+======================================== */
+
+.pr-section {
+  padding: 24px;
+
+  background-color: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.pr-header {
+  margin-bottom: 18px;
+}
+
+.pr-header h2 {
+  margin: 0 0 4px;
+  font-size: 24px;
+}
+
+.pr-header p {
+  margin: 0;
+
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.pr-form {
+  padding: 18px;
+
+  background-color: #f8fafc;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.pr-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pr-form-wide {
+  grid-column: 1 / -1;
+}
+
+.pr-form-field label {
+  display: block;
+  margin-bottom: 6px;
+
+  font-weight: 700;
+}
+
+.pr-form-field input,
+.pr-form-field select,
+.pr-form-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+
+  background-color: white;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.pr-form-field input:focus,
+.pr-form-field select:focus,
+.pr-form-field textarea:focus {
+  outline: none;
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+}
+
+.pr-form-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.pr-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.pr-form-footer span {
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
+.pr-form-footer button {
+  min-width: 130px;
+  padding: 10px 20px;
+
+  color: white;
+  background-color: var(--main-blue);
+
+  border: none;
+  border-radius: 9px;
+
+  font-weight: 700;
+}
+
+.pr-form-footer button:hover {
+  background-color: var(--main-blue-dark);
+}
+
+.pr-error-message {
+  min-height: 1.5em;
+  margin: 10px 0 0;
+
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.pr-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 12px;
+  margin: 22px 0 12px;
+}
+
+.pr-list-header h3 {
+  margin: 0;
+}
+
+.pr-list-header span {
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.pr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pr-empty {
+  padding: 30px;
+
+  color: var(--text-sub);
+  text-align: center;
+
+  background-color: #f8fafc;
+
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.pr-card {
+  padding: 16px;
+
+  background-color: white;
+
+  border: 1px solid var(--border);
+  border-left: 6px solid #94a3b8;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.pr-card.pr-status-draft {
+  border-left-color: #94a3b8;
+}
+
+.pr-card.pr-status-review {
+  border-left-color: #f59e0b;
+}
+
+.pr-card.pr-status-changes {
+  border-left-color: #ef4444;
+}
+
+.pr-card.pr-status-merged {
+  border-left-color: #22c55e;
+}
+
+.pr-card.pr-status-closed {
+  border-left-color: #64748b;
+}
+
+.pr-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 12px;
+}
+
+.pr-card-title-area {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+.pr-card-title {
+  overflow-wrap: anywhere;
+
+  color: var(--main-blue-dark);
+  font-size: 17px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pr-card-title:hover {
+  text-decoration: underline;
+}
+
+.pr-status-badge {
+  display: inline-block;
+  padding: 3px 9px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pr-status-badge.pr-status-draft {
+  color: #475569;
+  background-color: #e2e8f0;
+}
+
+.pr-status-badge.pr-status-review {
+  color: #92400e;
+  background-color: #fef3c7;
+}
+
+.pr-status-badge.pr-status-changes {
+  color: #b91c1c;
+  background-color: #fee2e2;
+}
+
+.pr-status-badge.pr-status-merged {
+  color: #047857;
+  background-color: #d1fae5;
+}
+
+.pr-status-badge.pr-status-closed {
+  color: #475569;
+  background-color: #e2e8f0;
+}
+
+.pr-delete-btn {
+  flex-shrink: 0;
+
+  padding: 5px 10px;
+
+  color: #b91c1c;
+  background-color: #fef2f2;
+
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+.pr-delete-btn:hover {
+  color: white;
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.pr-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 6px 18px;
+  margin-top: 12px;
+
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.pr-card-url {
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pr-card-note {
+  margin: 12px 0 0;
+
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pr-card-controls {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 14px;
+}
+
+.pr-card-controls label {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pr-card-status-select {
+  padding: 7px 10px;
+
+  background-color: white;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .pr-section {
+    padding: 16px;
+  }
+
+  .pr-form {
+    padding: 14px;
+  }
+
+  .pr-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pr-form-wide {
+    grid-column: auto;
+  }
+
+  .pr-form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pr-form-footer button {
+    width: 100%;
+  }
+
+  .pr-card-header {
+    flex-direction: column;
+  }
+
+  .pr-delete-btn {
+    align-self: flex-end;
+  }
+
+  .pr-card-controls {
+    justify-content: stretch;
+  }
+
+  .pr-card-controls label,
+  .pr-card-status-select {
+    width: 100%;
+  }
+}

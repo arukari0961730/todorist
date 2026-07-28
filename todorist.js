@@ -16,6 +16,15 @@ import {
 } from "./js/taskCommentData.js";
 
 import {
+  loadPullRequests
+} from "./js/prData.js";
+
+import {
+  setupPRSharing,
+  renderPRSharing
+} from "./js/prSharing.js";
+
+import {
   setupChat,
   renderChat
 } from "./js/chat.js";
@@ -134,10 +143,12 @@ function handleTaskDataChange() {
 function handleTeamChange() {
   resetFilterSettings();
   renderChat();
+  renderPRSharing();
 }
 
 function handleTeamUpdate() {
   renderChat();
+  renderPRSharing();
 }
 
 function handleCalendarDateClick(date) {
@@ -280,13 +291,20 @@ function setupApplicationChat() {
   setupChat();
 }
 
+function setupApplicationPRSharing() {
+  setupPRSharing();
+}
+
 function setupApplicationMainMenu() {
   setupMainMenu({
     onTaskShow:
       renderCurrentView,
 
     onChatShow:
-      renderChat
+      renderChat,
+
+    onPRShow:
+      renderPRSharing
   });
 }
 
@@ -337,12 +355,14 @@ function initializeApplication() {
   loadTasks();
   loadMessages();
   loadTaskComments();
+  loadPullRequests();
 
   validateApplicationState();
 
   setupApplicationRenderer();
   setupApplicationTeams();
   setupApplicationChat();
+  setupApplicationPRSharing();
   setupApplicationMainMenu();
   setupApplicationNavigation();
   setupApplicationFilters();
@@ -352,6 +372,7 @@ function initializeApplication() {
 
   renderCurrentView();
   renderChat();
+  renderPRSharing();
 
   console.log(
     "タスク管理アプリを起動しました"
