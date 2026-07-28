@@ -20,6 +20,12 @@ import {
   importMessages
 } from "./chatData.js";
 
+import {
+  deleteCommentsByTeamId,
+  exportTaskComments,
+  importTaskComments
+} from "./taskCommentData.js";
+
 const teamList =
   document.getElementById(
     "teamList"
@@ -411,7 +417,7 @@ function handleTeamDeletion() {
   const confirmed =
     window.confirm(
       `「${activeTeam.name}」を削除しますか？\n\n` +
-      "このチームのタスクとチャットも削除されます。\n" +
+      "このチームのタスク、チャット、コメントも削除されます。\n" +
       "この操作は取り消せません。"
     );
 
@@ -424,6 +430,9 @@ function handleTeamDeletion() {
 
   const messageBackup =
     exportMessages();
+
+  const commentBackup =
+    exportTaskComments();
 
   const tasksDeleted =
     deleteTasksByTeamId(
@@ -457,6 +466,28 @@ function handleTeamDeletion() {
     return;
   }
 
+  const commentsDeleted =
+    deleteCommentsByTeamId(
+      activeTeam.id
+    );
+
+  if (!commentsDeleted) {
+    importTasks(
+      taskBackup
+    );
+
+    importMessages(
+      messageBackup
+    );
+
+    setMessage(
+      "チームのタスクコメントを削除できませんでした",
+      "error"
+    );
+
+    return;
+  }
+
   const result =
     deleteTeam(
       activeTeam.id
@@ -469,6 +500,10 @@ function handleTeamDeletion() {
 
     importMessages(
       messageBackup
+    );
+
+    importTaskComments(
+      commentBackup
     );
 
     setMessage(

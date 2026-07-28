@@ -11,6 +11,16 @@ import {
   getTaskAssignee
 } from "./filters.js";
 
+import {
+  renderTaskCommentsSection
+} from "./taskComments.js";
+
+import {
+  deleteCommentsByTaskId,
+  exportTaskComments,
+  importTaskComments
+} from "./taskCommentData.js";
+
 const modalOverlay =
   document.getElementById("modalOverlay");
 
@@ -420,10 +430,35 @@ export function renderTaskDetail(
           true
         );
 
+        const commentBackup =
+          exportTaskComments();
+
         try {
-          deleteTask(
-            task.id
-          );
+          const commentsDeleted =
+            deleteCommentsByTaskId(
+              task.id
+            );
+
+          if (!commentsDeleted) {
+            throw new Error(
+              "タスクコメントを削除できませんでした"
+            );
+          }
+
+          const taskDeleted =
+            deleteTask(
+              task.id
+            );
+
+          if (!taskDeleted) {
+            importTaskComments(
+              commentBackup
+            );
+
+            throw new Error(
+              "タスクを削除できませんでした"
+            );
+          }
 
           runCallback(
             onTaskChange
@@ -459,6 +494,11 @@ export function renderTaskDetail(
       }
     );
 
+  const commentsSection =
+    renderTaskCommentsSection(
+      task
+    );
+
   modalContent.appendChild(
     title
   );
@@ -489,6 +529,10 @@ export function renderTaskDetail(
 
   modalContent.appendChild(
     changeStatusBtn
+  );
+
+  modalContent.appendChild(
+    commentsSection
   );
 
   modalContent.appendChild(

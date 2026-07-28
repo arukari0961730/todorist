@@ -12,6 +12,10 @@ import {
 } from "./js/chatData.js";
 
 import {
+  loadTaskComments
+} from "./js/taskCommentData.js";
+
+import {
   setupChat,
   renderChat
 } from "./js/chat.js";
@@ -332,6 +336,7 @@ function initializeApplication() {
   loadTeams();
   loadTasks();
   loadMessages();
+  loadTaskComments();
 
   validateApplicationState();
 
